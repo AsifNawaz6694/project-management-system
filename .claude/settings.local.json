@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -f database/database.sqlite)",
+      "Bash(touch database/database.sqlite)",
+      "Bash(php artisan *)",
+      "Bash(npm run *)",
+      "Bash(./vendor/bin/pest)",
+      "Bash(./vendor/bin/pint app/ database/ routes/)",
+      "Bash(./vendor/bin/pint --test)",
+      "Bash(./vendor/bin/pint --test app/ database/ routes/)",
+      "Bash(./vendor/bin/pint --test app/Modules/ProjectManagement/ database/seeders/ProjectSeeder.php)",
+      "Bash(./vendor/bin/pint app/Modules/ProjectManagement/ database/seeders/ProjectSeeder.php)"
+    ]
+  }
+}

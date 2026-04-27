@@ -1,0 +1,254 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans:
+        'Inter', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    --radius-xs: 0.5rem;
+    --radius-sm: 0.625rem;
+    --radius-md: 0.875rem;
+    --radius-lg: 1.125rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 1.875rem;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-canvas: var(--canvas);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --shadow-soft-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+    --shadow-soft-sm: 0 2px 6px -1px rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.04);
+    --shadow-soft-md: 0 8px 24px -8px rgb(15 23 42 / 0.10), 0 2px 4px -2px rgb(15 23 42 / 0.04);
+    --shadow-soft-lg: 0 20px 40px -16px rgb(15 23 42 / 0.14), 0 4px 8px -4px rgb(15 23 42 / 0.04);
+    --shadow-soft-xl: 0 30px 60px -20px rgb(15 23 42 / 0.18), 0 8px 16px -8px rgb(15 23 42 / 0.06);
+    --shadow-glow: 0 10px 30px -8px rgb(124 58 237 / 0.45);
+}
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-border, currentColor);
+    }
+}
+
+:root {
+    --background: hsl(220, 33%, 98%);
+    --canvas: hsl(220, 40%, 96.5%);
+    --foreground: hsl(222, 47%, 11%);
+    --card: hsl(0, 0%, 100%);
+    --card-foreground: hsl(222, 47%, 11%);
+    --popover: hsl(0, 0%, 100%);
+    --popover-foreground: hsl(222, 47%, 11%);
+
+    --primary: hsl(252, 83%, 58%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --secondary: hsl(220, 30%, 96%);
+    --secondary-foreground: hsl(222, 47%, 11%);
+    --muted: hsl(220, 25%, 95%);
+    --muted-foreground: hsl(217, 15%, 45%);
+    --accent: hsl(220, 28%, 95%);
+    --accent-foreground: hsl(222, 47%, 11%);
+    --destructive: hsl(346, 84%, 58%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --border: hsl(220, 24%, 91%);
+    --input: hsl(220, 22%, 90%);
+    --ring: hsl(252, 83%, 58%);
+
+    --brand: hsl(252, 83%, 58%);
+    --brand-foreground: hsl(0, 0%, 100%);
+
+    --chart-1: hsl(252, 83%, 58%);
+    --chart-2: hsl(196, 95%, 50%);
+    --chart-3: hsl(330, 92%, 60%);
+    --chart-4: hsl(160, 70%, 45%);
+    --chart-5: hsl(35, 92%, 60%);
+
+    --radius: 0.875rem;
+
+    --sidebar-background: hsl(0, 0%, 100%);
+    --sidebar-foreground: hsl(222, 30%, 25%);
+    --sidebar-primary: hsl(252, 83%, 58%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-accent: hsl(252, 60%, 96%);
+    --sidebar-accent-foreground: hsl(252, 83%, 32%);
+    --sidebar-border: hsl(220, 22%, 92%);
+    --sidebar-ring: hsl(252, 83%, 58%);
+}
+
+.dark {
+    --background: hsl(222, 47%, 6%);
+    --canvas: hsl(222, 47%, 5%);
+    --foreground: hsl(210, 40%, 96%);
+    --card: hsl(222, 40%, 9%);
+    --card-foreground: hsl(210, 40%, 96%);
+    --popover: hsl(222, 40%, 9%);
+    --popover-foreground: hsl(210, 40%, 96%);
+
+    --primary: hsl(252, 95%, 70%);
+    --primary-foreground: hsl(222, 47%, 8%);
+    --secondary: hsl(222, 30%, 14%);
+    --secondary-foreground: hsl(210, 40%, 96%);
+    --muted: hsl(222, 30%, 12%);
+    --muted-foreground: hsl(217, 16%, 65%);
+    --accent: hsl(222, 30%, 14%);
+    --accent-foreground: hsl(210, 40%, 96%);
+    --destructive: hsl(346, 90%, 65%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --border: hsl(222, 28%, 16%);
+    --input: hsl(222, 28%, 16%);
+    --ring: hsl(252, 95%, 70%);
+
+    --brand: hsl(252, 95%, 70%);
+    --brand-foreground: hsl(222, 47%, 8%);
+
+    --chart-1: hsl(252, 95%, 70%);
+    --chart-2: hsl(196, 95%, 60%);
+    --chart-3: hsl(330, 92%, 70%);
+    --chart-4: hsl(160, 70%, 55%);
+    --chart-5: hsl(35, 92%, 65%);
+
+    --sidebar-background: hsl(222, 40%, 9%);
+    --sidebar-foreground: hsl(210, 30%, 80%);
+    --sidebar-primary: hsl(252, 95%, 70%);
+    --sidebar-primary-foreground: hsl(222, 47%, 8%);
+    --sidebar-accent: hsl(252, 70%, 18%);
+    --sidebar-accent-foreground: hsl(210, 40%, 96%);
+    --sidebar-border: hsl(222, 30%, 16%);
+    --sidebar-ring: hsl(252, 95%, 70%);
+}
+
+@layer base {
+    * {
+        border-color: var(--color-border);
+    }
+
+    html {
+        font-feature-settings: 'cv11', 'ss01', 'ss03';
+    }
+
+    body {
+        background:
+            radial-gradient(ellipse 90% 60% at 50% -10%, color-mix(in oklab, var(--brand) 18%, transparent), transparent 60%),
+            radial-gradient(ellipse 70% 50% at 110% 0%, color-mix(in oklab, var(--chart-3) 14%, transparent), transparent 55%),
+            var(--canvas);
+        background-attachment: fixed;
+        color: var(--color-foreground);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .dark body {
+        background:
+            radial-gradient(ellipse 90% 60% at 50% -10%, color-mix(in oklab, var(--brand) 22%, transparent), transparent 60%),
+            radial-gradient(ellipse 70% 50% at 110% 0%, color-mix(in oklab, var(--chart-3) 16%, transparent), transparent 55%),
+            var(--canvas);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-family: var(--font-display);
+        letter-spacing: -0.02em;
+    }
+}
+
+@layer utilities {
+    .shadow-soft-xs {
+        box-shadow: var(--shadow-soft-xs);
+    }
+    .shadow-soft-sm {
+        box-shadow: var(--shadow-soft-sm);
+    }
+    .shadow-soft-md {
+        box-shadow: var(--shadow-soft-md);
+    }
+    .shadow-soft-lg {
+        box-shadow: var(--shadow-soft-lg);
+    }
+    .shadow-soft-xl {
+        box-shadow: var(--shadow-soft-xl);
+    }
+    .shadow-glow {
+        box-shadow: var(--shadow-glow);
+    }
+
+    .bg-mesh {
+        background:
+            radial-gradient(circle at 0% 0%, color-mix(in oklab, var(--brand) 18%, transparent), transparent 40%),
+            radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--chart-3) 16%, transparent), transparent 40%),
+            radial-gradient(circle at 50% 100%, color-mix(in oklab, var(--chart-2) 14%, transparent), transparent 50%);
+    }
+
+    .text-gradient-brand {
+        background: linear-gradient(135deg, hsl(252, 90%, 60%) 0%, hsl(196, 95%, 50%) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .scrollbar-soft::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    .scrollbar-soft::-webkit-scrollbar-thumb {
+        background: color-mix(in oklab, var(--foreground) 12%, transparent);
+        border-radius: 999px;
+    }
+    .scrollbar-soft::-webkit-scrollbar-thumb:hover {
+        background: color-mix(in oklab, var(--foreground) 24%, transparent);
+    }
+}
