@@ -3,16 +3,15 @@
 namespace App\Modules\TaskManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Communication\Services\MentionParser;
 use App\Modules\TaskManagement\Models\Task;
 use App\Modules\TaskManagement\Models\TaskComment;
-use App\Modules\TaskManagement\Services\TaskService;
+use App\Modules\UserManagement\Models\Activity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class TaskCommentController extends Controller
 {
-    public function __construct(private readonly TaskService $tasks) {}
-
     public function store(Request $request, Task $task): RedirectResponse
     {
         $user = $request->user();
@@ -21,10 +20,34 @@ class TaskCommentController extends Controller
         }
 
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:2000'],
+            'body' => ['required', 'string', 'max:5000'],
+            'parent_id' => ['nullable', 'integer', 'exists:task_comments,id'],
         ]);
 
-        $this->tasks->addComment($task, $user, $data['body']);
+        $mentions = MentionParser::extract($data['body']);
+
+        $comment = $task->comments()->create([
+            'user_id' => $user->id,
+            'parent_id' => $data['parent_id'] ?? null,
+            'body' => $data['body'],
+            'mentions' => $mentions,
+        ]);
+
+        Activity::log('task.commented', [
+            'subject_user_id' => $task->assignee_id,
+            'module' => 'tasks',
+            'description' => "Commented on {$task->title}",
+            'properties' => ['task_id' => $task->id, 'comment_id' => $comment->id],
+        ]);
+
+        if (! empty($mentions)) {
+            MentionParser::notify(
+                $mentions,
+                "{$user->name} mentioned you on \"{$task->title}\"",
+                ['task_id' => $task->id, 'comment_id' => $comment->id],
+                $user->id,
+            );
+        }
 
         return back();
     }
@@ -39,7 +62,15 @@ class TaskCommentController extends Controller
             abort(403);
         }
 
+        $commentId = $comment->id;
         $comment->delete();
+
+        Activity::log('task.comment-deleted', [
+            'subject_user_id' => $task->assignee_id,
+            'module' => 'tasks',
+            'description' => "Deleted a comment on task \"{$task->title}\"",
+            'properties' => ['task_id' => $task->id, 'comment_id' => $commentId],
+        ]);
 
         return back();
     }

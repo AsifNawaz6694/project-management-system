@@ -40,6 +40,7 @@ class UpdateTaskRequest extends FormRequest
             'status' => ['sometimes', 'required', Rule::in(Task::STATUSES)],
             'priority' => ['sometimes', 'required', Rule::in(Task::PRIORITIES)],
             'due_date' => ['nullable', 'date'],
+            'estimate_minutes' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'assignee_id' => ['nullable', 'integer', 'exists:users,id'],
             'subtasks' => ['array'],
             'subtasks.*.title' => ['required_with:subtasks', 'string', 'max:200'],

@@ -17,7 +17,7 @@ export default function Welcome() {
                         <div className="from-violet-600 via-indigo-600 to-blue-600 shadow-glow flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br ring-1 ring-white/30">
                             <AppLogoIcon className="size-5 fill-current text-white" />
                         </div>
-                        <span className="font-display text-base font-bold">{name || 'Raqtan'}</span>
+                        <span className="font-display text-base font-bold">{name || 'Raqtan PMS'}</span>
                     </div>
                     <nav className="flex items-center gap-2">
                         {auth.user ? (

@@ -1,3 +1,4 @@
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { RoleBadge } from '@/components/role-badge';
 import { SoftCard, SoftCardBody, SoftCardTitle } from '@/components/soft-card';
@@ -31,6 +32,7 @@ export default function UserShow({ user, activities, permissionSlugs }: UserShow
     const { can, user: me } = usePermissions();
     const getInitials = useInitials();
     const [tab, setTab] = useState<Tab>('overview');
+    const [confirmDelete, setConfirmDelete] = useState(false);
     const isMe = me?.id === user.id;
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -49,7 +51,7 @@ export default function UserShow({ user, activities, permissionSlugs }: UserShow
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={user.name} />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 md:p-8">
+            <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <Link
                     href={route('users.index')}
                     className="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-colors"
@@ -92,11 +94,7 @@ export default function UserShow({ user, activities, permissionSlugs }: UserShow
                                     variant="outline"
                                     size="sm"
                                     className="text-rose-600 ring-rose-200 hover:bg-rose-50 dark:text-rose-400 dark:ring-rose-500/30 hover:ring-rose-300 gap-1.5"
-                                    onClick={() => {
-                                        if (confirm(`Delete ${user.name}? This cannot be undone.`)) {
-                                            router.delete(route('users.destroy', user.id));
-                                        }
-                                    }}
+                                    onClick={() => setConfirmDelete(true)}
                                 >
                                     <Trash2 className="size-3.5" /> Delete
                                 </Button>
@@ -222,6 +220,20 @@ export default function UserShow({ user, activities, permissionSlugs }: UserShow
                     </SoftCard>
                 )}
             </div>
+
+            <ConfirmDialog
+                open={confirmDelete}
+                onOpenChange={setConfirmDelete}
+                title={`Delete ${user.name}?`}
+                description={`This permanently removes ${user.name} from the workspace, along with their role assignments. Their authored work (tasks, projects, comments) will remain. This cannot be undone.`}
+                confirmLabel="Delete user"
+                tone="destructive"
+                icon={Trash2}
+                onConfirm={() => {
+                    router.delete(route('users.destroy', user.id));
+                    setConfirmDelete(false);
+                }}
+            />
         </AppLayout>
     );
 }

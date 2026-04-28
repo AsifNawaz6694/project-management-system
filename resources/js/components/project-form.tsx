@@ -13,6 +13,7 @@ import {
     type ProjectPriority,
     type ProjectStatus,
 } from '@/lib/projects';
+import { CURRENCY_META, SUPPORTED_CURRENCIES } from '@/lib/currency';
 import { cn } from '@/lib/utils';
 import { Link, useForm } from '@inertiajs/react';
 import { Calendar, Check, CheckCircle2, Circle, LoaderCircle, Plus, Trash2 } from 'lucide-react';
@@ -45,6 +46,7 @@ export interface ProjectFormState {
     start_date: string;
     end_date: string;
     budget: string;
+    currency: string;
     progress: number;
     owner_id: number | null;
     member_ids: number[];
@@ -57,13 +59,15 @@ interface ProjectFormProps {
     statuses: string[];
     priorities: string[];
     colors: string[];
+    currencies?: string[];
     submitUrl: string;
     submitMethod: 'post' | 'patch';
     submitLabel: string;
     cancelUrl: string;
 }
 
-export function ProjectForm({ initial, users, statuses, priorities, colors, submitUrl, submitMethod, submitLabel, cancelUrl }: ProjectFormProps) {
+export function ProjectForm({ initial, users, statuses, priorities, colors, currencies, submitUrl, submitMethod, submitLabel, cancelUrl }: ProjectFormProps) {
+    const currencyList = (currencies && currencies.length > 0 ? currencies : SUPPORTED_CURRENCIES) as string[];
     const getInitials = useInitials();
     const { data, setData, post, patch, processing, errors } = useForm<ProjectFormState>({ ...initial });
 
@@ -149,15 +153,28 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, subm
                         <Input type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} />
                     </Field>
 
-                    <Field label="Budget (USD)" error={errors.budget}>
-                        <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={data.budget}
-                            onChange={(e) => setData('budget', e.target.value)}
-                            placeholder="50000"
-                        />
+                    <Field label="Budget" error={errors.budget}>
+                        <div className="flex gap-2">
+                            <Select value={data.currency} onValueChange={(v) => setData('currency', v)}>
+                                <SelectTrigger className="h-11 w-[120px] rounded-xl"><SelectValue /></SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {currencyList.map((c) => (
+                                        <SelectItem key={c} value={c}>
+                                            {c} · {CURRENCY_META[c as keyof typeof CURRENCY_META]?.label ?? c}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={data.budget}
+                                onChange={(e) => setData('budget', e.target.value)}
+                                placeholder="50000"
+                                className="flex-1"
+                            />
+                        </div>
                     </Field>
                     <Field label="Progress %" error={errors.progress}>
                         <Input

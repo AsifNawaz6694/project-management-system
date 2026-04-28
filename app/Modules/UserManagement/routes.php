@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\UserManagement\Http\Controllers\ActivityLogController;
 use App\Modules\UserManagement\Http\Controllers\RoleController;
 use App\Modules\UserManagement\Http\Controllers\UserController;
 use App\Modules\UserManagement\Http\Middleware\EnsurePermission;
@@ -38,7 +39,23 @@ Route::middleware(['auth'])->group(function () {
         ->middleware(EnsurePermission::class.':roles.view')
         ->name('roles.index');
 
+    Route::post('roles', [RoleController::class, 'store'])
+        ->middleware(EnsurePermission::class.':roles.create')
+        ->name('roles.store');
+
     Route::patch('roles/{role}', [RoleController::class, 'update'])
         ->middleware(EnsurePermission::class.':roles.update')
         ->name('roles.update');
+
+    Route::patch('roles/{role}/details', [RoleController::class, 'rename'])
+        ->middleware(EnsurePermission::class.':roles.update')
+        ->name('roles.rename');
+
+    Route::delete('roles/{role}', [RoleController::class, 'destroy'])
+        ->middleware(EnsurePermission::class.':roles.delete')
+        ->name('roles.destroy');
+
+    Route::get('activity', [ActivityLogController::class, 'index'])
+        ->middleware(EnsurePermission::class.':users.view')
+        ->name('activity.index');
 });

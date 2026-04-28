@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->decimal('budget', 14, 2)->nullable();
+            $table->string('currency', 8)->default('SAR');
             $table->unsignedTinyInteger('progress')->default(0);
             $table->foreignId('owner_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

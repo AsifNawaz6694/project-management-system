@@ -23,12 +23,15 @@ class StoreTaskRequest extends FormRequest
             'status' => ['required', Rule::in(Task::STATUSES)],
             'priority' => ['required', Rule::in(Task::PRIORITIES)],
             'due_date' => ['nullable', 'date'],
+            'estimate_minutes' => ['nullable', 'integer', 'min:0', 'max:99999'],
             'assignee_id' => ['nullable', 'integer', 'exists:users,id'],
             'subtasks' => ['array'],
             'subtasks.*.title' => ['required_with:subtasks', 'string', 'max:200'],
             'subtasks.*.completed' => ['boolean'],
             'subtasks.*.assignee_id' => ['nullable', 'integer', 'exists:users,id'],
             'subtasks.*.due_date' => ['nullable', 'date'],
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => ['file', 'max:20480'],
         ];
     }
 }

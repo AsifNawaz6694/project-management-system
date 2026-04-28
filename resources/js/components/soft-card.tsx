@@ -5,7 +5,7 @@ export const SoftCard = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement
     <div
         ref={ref}
         className={cn(
-            'bg-card shadow-soft-sm hover:shadow-soft-md ring-1 ring-border/60 relative overflow-hidden rounded-2xl transition-all duration-300',
+            'bg-card shadow-soft-sm hover:shadow-soft-lg ring-1 ring-border/60 hover:ring-foreground/15 relative overflow-hidden rounded-2xl transition-all duration-300 animate-fade-up',
             className,
         )}
         {...props}

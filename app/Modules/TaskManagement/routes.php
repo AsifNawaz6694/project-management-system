@@ -3,6 +3,7 @@
 use App\Modules\TaskManagement\Http\Controllers\TaskAttachmentController;
 use App\Modules\TaskManagement\Http\Controllers\TaskCommentController;
 use App\Modules\TaskManagement\Http\Controllers\TaskController;
+use App\Modules\TaskManagement\Http\Controllers\TimeLogController;
 use App\Modules\UserManagement\Http\Middleware\EnsurePermission;
 use Illuminate\Support\Facades\Route;
 
@@ -43,4 +44,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])->name('tasks.attachments.store');
     Route::get('tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'download'])->name('tasks.attachments.download');
     Route::delete('tasks/{task}/attachments/{attachment}', [TaskAttachmentController::class, 'destroy'])->name('tasks.attachments.destroy');
+
+    Route::post('tasks/{task}/time-logs', [TimeLogController::class, 'store'])
+        ->middleware(EnsurePermission::class.':tasks.log-time')
+        ->name('tasks.time-logs.store');
+    Route::delete('tasks/{task}/time-logs/{timeLog}', [TimeLogController::class, 'destroy'])
+        ->name('tasks.time-logs.destroy');
 });

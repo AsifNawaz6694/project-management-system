@@ -11,7 +11,7 @@ export default function AppLogo() {
                 <AppLogoIcon className="size-5 fill-current text-white" />
             </div>
             <div className="ml-2 grid flex-1 text-left">
-                <span className="font-display truncate text-[15px] font-bold leading-tight tracking-tight">{name || 'Raqtan'}</span>
+                <span className="font-display truncate text-[15px] font-bold leading-tight tracking-tight">{name || 'Raqtan PMS'}</span>
                 <span className="text-muted-foreground truncate text-[11px]">Project workspace</span>
             </div>
         </>

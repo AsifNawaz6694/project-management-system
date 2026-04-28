@@ -20,7 +20,7 @@ export default function UsersEdit({ user, roles }: UsersEditProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${user.name}`} />
-            <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 md:p-8">
+            <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     eyebrow="User management"
                     title={`Edit ${user.name}`}

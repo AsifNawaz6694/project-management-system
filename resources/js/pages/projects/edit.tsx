@@ -16,9 +16,10 @@ interface ProjectsEditProps {
     statuses: string[];
     priorities: string[];
     colors: string[];
+    currencies: string[];
 }
 
-export default function ProjectsEdit({ project, users, statuses, priorities, colors }: ProjectsEditProps) {
+export default function ProjectsEdit({ project, users, statuses, priorities, colors, currencies }: ProjectsEditProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Workspace', href: '/dashboard' },
         { title: 'Projects', href: '/projects' },
@@ -29,7 +30,7 @@ export default function ProjectsEdit({ project, users, statuses, priorities, col
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${project.title}`} />
-            <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 md:p-8">
+            <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader eyebrow="Project management" title={`Edit ${project.title}`} description="Update the plan, members, milestones and progress." />
                 <ProjectForm
                     initial={{
@@ -41,6 +42,7 @@ export default function ProjectsEdit({ project, users, statuses, priorities, col
                         start_date: (project.start_date as unknown as string) ?? '',
                         end_date: (project.end_date as unknown as string) ?? '',
                         budget: project.budget ? String(project.budget) : '',
+                        currency: project.currency ?? 'SAR',
                         progress: project.progress ?? 0,
                         owner_id: project.owner_id ?? null,
                         member_ids: project.member_ids ?? [],
@@ -55,6 +57,7 @@ export default function ProjectsEdit({ project, users, statuses, priorities, col
                     statuses={statuses}
                     priorities={priorities}
                     colors={colors}
+                    currencies={currencies}
                     submitUrl={route('projects.update', project.slug)}
                     submitMethod="patch"
                     submitLabel="Save changes"

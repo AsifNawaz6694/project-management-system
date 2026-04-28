@@ -16,15 +16,16 @@ interface ProjectsCreateProps {
     statuses: string[];
     priorities: string[];
     colors: string[];
+    currencies: string[];
 }
 
-export default function ProjectsCreate({ users, statuses, priorities, colors }: ProjectsCreateProps) {
+export default function ProjectsCreate({ users, statuses, priorities, colors, currencies }: ProjectsCreateProps) {
     const { user } = usePermissions();
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="New project" />
-            <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4 md:p-8">
+            <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     eyebrow="Project management"
                     title="Create a new project"
@@ -40,6 +41,7 @@ export default function ProjectsCreate({ users, statuses, priorities, colors }: 
                         start_date: '',
                         end_date: '',
                         budget: '',
+                        currency: 'SAR',
                         progress: 0,
                         owner_id: user?.id ?? null,
                         member_ids: user?.id ? [user.id] : [],
@@ -49,6 +51,7 @@ export default function ProjectsCreate({ users, statuses, priorities, colors }: 
                     statuses={statuses}
                     priorities={priorities}
                     colors={colors}
+                    currencies={currencies}
                     submitUrl={route('projects.store')}
                     submitMethod="post"
                     submitLabel="Create project"

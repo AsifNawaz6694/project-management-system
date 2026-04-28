@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\ProjectManagement\Http\Controllers\MilestoneController;
+use App\Modules\ProjectManagement\Http\Controllers\ProjectAttachmentController;
 use App\Modules\ProjectManagement\Http\Controllers\ProjectController;
 use App\Modules\UserManagement\Http\Middleware\EnsurePermission;
 use Illuminate\Support\Facades\Route;
@@ -36,4 +37,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::patch('projects/{project}/milestones/{milestone}/toggle', [MilestoneController::class, 'toggle'])
         ->name('projects.milestones.toggle');
+
+    Route::post('projects/{project}/files', [ProjectAttachmentController::class, 'store'])
+        ->name('projects.files.store');
+    Route::get('projects/{project}/files/{attachment}', [ProjectAttachmentController::class, 'download'])
+        ->name('projects.files.download');
+    Route::delete('projects/{project}/files/{attachment}', [ProjectAttachmentController::class, 'destroy'])
+        ->name('projects.files.destroy');
 });

@@ -1,13 +1,17 @@
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { RoleBadge } from '@/components/role-badge';
-import { SoftCard, SoftCardBody, SoftCardTitle } from '@/components/soft-card';
+import { SoftCard } from '@/components/soft-card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/react';
-import { Crown, Lock, ShieldCheck, Users } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { Crown, LoaderCircle, Lock, Pencil, Plus, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface RoleSummary {
@@ -38,19 +42,23 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function RolesIndex({ roles, modules }: RolesIndexProps) {
     const { can } = usePermissions();
-    const editableRoles = roles.filter((r) => r.slug !== 'admin');
-    const [activeRoleId, setActiveRoleId] = useState<number>(editableRoles[0]?.id ?? roles[0]?.id);
+    const [activeRoleId, setActiveRoleId] = useState<number>(roles.find((r) => r.slug !== 'admin')?.id ?? roles[0]?.id);
     const activeRole = roles.find((r) => r.id === activeRoleId)!;
-    const isAdminRole = activeRole.slug === 'admin';
+    const isAdminRole = activeRole?.slug === 'admin';
 
-    const [selected, setSelected] = useState<Set<string>>(new Set(activeRole.permission_slugs));
+    const [selected, setSelected] = useState<Set<string>>(new Set(activeRole?.permission_slugs ?? []));
     const [dirty, setDirty] = useState(false);
     const [saving, setSaving] = useState(false);
 
+    const [showCreate, setShowCreate] = useState(false);
+    const [showRename, setShowRename] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(false);
+
     useEffect(() => {
+        if (!activeRole) return;
         setSelected(new Set(activeRole.permission_slugs));
         setDirty(false);
-    }, [activeRoleId, activeRole.permission_slugs]);
+    }, [activeRoleId, activeRole?.permission_slugs]);
 
     const togglePermission = (slug: string) => {
         if (isAdminRole) return;
@@ -88,14 +96,32 @@ export default function RolesIndex({ roles, modules }: RolesIndexProps) {
         );
     };
 
+    if (!activeRole) {
+        return (
+            <AppLayout breadcrumbs={breadcrumbs}>
+                <Head title="Roles & Permissions" />
+                <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
+                    <p className="text-muted-foreground text-sm">No roles yet.</p>
+                </div>
+            </AppLayout>
+        );
+    }
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Roles & Permissions" />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 md:p-8">
+            <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     eyebrow="Administration"
                     title="Roles & Permissions"
-                    description="Define exactly what each role can access across every module of the workspace."
+                    description="Define exactly what each role can access. Add custom roles for your team's structure."
+                    actions={
+                        can('roles.create') && (
+                            <Button onClick={() => setShowCreate(true)} className="gap-2">
+                                <Plus className="size-4" /> New role
+                            </Button>
+                        )
+                    }
                 />
 
                 <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
@@ -119,6 +145,7 @@ export default function RolesIndex({ roles, modules }: RolesIndexProps) {
                                     role.slug === 'admin' && 'bg-gradient-to-br from-amber-400 to-orange-500',
                                     role.slug === 'manager' && 'bg-gradient-to-br from-violet-500 to-indigo-600',
                                     role.slug === 'employee' && 'bg-gradient-to-br from-emerald-500 to-teal-600',
+                                    !['admin', 'manager', 'employee'].includes(role.slug) && 'bg-gradient-to-br from-pink-500 to-fuchsia-600',
                                 )}>
                                     {role.slug === 'admin' ? <Crown className="size-5 text-white" /> : <ShieldCheck className="size-5 text-white" />}
                                 </div>
@@ -152,6 +179,21 @@ export default function RolesIndex({ roles, modules }: RolesIndexProps) {
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
+                                {!activeRole.is_system && can('roles.update') && (
+                                    <Button onClick={() => setShowRename(true)} variant="secondary" size="sm" className="gap-1.5">
+                                        <Pencil className="size-3.5" /> Rename
+                                    </Button>
+                                )}
+                                {!activeRole.is_system && can('roles.delete') && (
+                                    <Button
+                                        onClick={() => setConfirmDelete(true)}
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-rose-600 ring-rose-200 hover:bg-rose-50 dark:text-rose-400 dark:ring-rose-500/30 hover:ring-rose-300 gap-1.5"
+                                    >
+                                        <Trash2 className="size-3.5" /> Delete
+                                    </Button>
+                                )}
                                 {isAdminRole ? (
                                     <span className="bg-gradient-to-r from-amber-50 to-orange-50 text-amber-800 ring-amber-300/60 dark:from-amber-500/10 dark:to-orange-500/10 dark:text-amber-200 dark:ring-amber-500/30 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ring-1">
                                         <Lock className="size-3" /> Admins always have full access
@@ -234,6 +276,144 @@ export default function RolesIndex({ roles, modules }: RolesIndexProps) {
                     </SoftCard>
                 </div>
             </div>
+
+            <CreateRoleDialog open={showCreate} onOpenChange={setShowCreate} modules={modules} />
+            <RenameRoleDialog open={showRename} onOpenChange={setShowRename} role={activeRole} />
+            <ConfirmDialog
+                open={confirmDelete}
+                onOpenChange={setConfirmDelete}
+                title={`Delete role "${activeRole.name}"?`}
+                description={
+                    activeRole.users_count > 0
+                        ? `This role is currently assigned to ${activeRole.users_count} user(s). Those users will lose this role's permissions. This cannot be undone.`
+                        : 'This role will be removed permanently. This cannot be undone.'
+                }
+                confirmLabel="Delete role"
+                tone="destructive"
+                icon={Trash2}
+                onConfirm={() => {
+                    router.delete(route('roles.destroy', activeRole.id));
+                    setConfirmDelete(false);
+                }}
+            />
         </AppLayout>
+    );
+}
+
+function CreateRoleDialog({ open, onOpenChange, modules }: { open: boolean; onOpenChange: (o: boolean) => void; modules: ModuleConfig[] }) {
+    const form = useForm<{ name: string; description: string; permissions: string[] }>({ name: '', description: '', permissions: [] });
+
+    const togglePerm = (slug: string) => {
+        const set = new Set(form.data.permissions);
+        if (set.has(slug)) set.delete(slug); else set.add(slug);
+        form.setData('permissions', Array.from(set));
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl rounded-2xl">
+                <DialogHeader>
+                    <DialogTitle className="font-display text-xl font-bold">Create a new role</DialogTitle>
+                    <DialogDescription>Name the role and choose which permissions members should have.</DialogDescription>
+                </DialogHeader>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        form.post(route('roles.store'), {
+                            onSuccess: () => {
+                                form.reset();
+                                onOpenChange(false);
+                            },
+                        });
+                    }}
+                    className="space-y-4"
+                >
+                    <div className="grid gap-3 md:grid-cols-2">
+                        <div className="space-y-1.5">
+                            <Label className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">Name</Label>
+                            <Input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} placeholder="e.g. Project Lead" required autoFocus />
+                            {form.errors.name && <p className="text-rose-600 text-xs">{form.errors.name}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">Description</Label>
+                            <Input value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} placeholder="Short summary of what this role does" />
+                        </div>
+                    </div>
+
+                    <div className="max-h-[40vh] space-y-3 overflow-y-auto rounded-xl border border-border/60 bg-muted/20 p-3">
+                        {modules.map((mod) => (
+                            <div key={mod.key} className="space-y-1.5">
+                                <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">{mod.label}</p>
+                                <div className="grid gap-1.5 sm:grid-cols-2">
+                                    {mod.permissions.map((p) => {
+                                        const checked = form.data.permissions.includes(p.slug);
+                                        return (
+                                            <label key={p.slug} className={cn('flex cursor-pointer items-start gap-2 rounded-lg p-2 text-xs ring-1 transition-all',
+                                                checked ? 'bg-violet-50 ring-violet-200 dark:bg-violet-500/10 dark:ring-violet-500/30' : 'bg-card ring-border/50 hover:ring-foreground/20')}>
+                                                <input type="checkbox" checked={checked} onChange={() => togglePerm(p.slug)} className="mt-0.5 size-3.5 accent-violet-600" />
+                                                <div className="min-w-0">
+                                                    <p className="font-semibold">{p.name}</p>
+                                                    <p className="text-muted-foreground truncate font-mono text-[10px]">{p.slug}</p>
+                                                </div>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={form.processing}>Cancel</Button>
+                        <Button type="submit" disabled={form.processing || !form.data.name.trim()} className="gap-2">
+                            {form.processing && <LoaderCircle className="size-4 animate-spin" />} Create role
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function RenameRoleDialog({ open, onOpenChange, role }: { open: boolean; onOpenChange: (o: boolean) => void; role: RoleSummary }) {
+    const form = useForm<{ name: string; description: string }>({ name: role.name, description: role.description ?? '' });
+
+    useEffect(() => {
+        form.setData({ name: role.name, description: role.description ?? '' });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [role.id]);
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md rounded-2xl">
+                <DialogHeader>
+                    <DialogTitle className="font-display text-lg font-bold">Rename role</DialogTitle>
+                    <DialogDescription>Update the display name and description for this role.</DialogDescription>
+                </DialogHeader>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        form.patch(route('roles.rename', role.id), { onSuccess: () => onOpenChange(false), preserveScroll: true });
+                    }}
+                    className="space-y-3"
+                >
+                    <div className="space-y-1.5">
+                        <Label className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">Name</Label>
+                        <Input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} required autoFocus />
+                        {form.errors.name && <p className="text-rose-600 text-xs">{form.errors.name}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">Description</Label>
+                        <Input value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} />
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={form.processing}>Cancel</Button>
+                        <Button type="submit" disabled={form.processing || !form.data.name.trim()} className="gap-2">
+                            {form.processing && <LoaderCircle className="size-4 animate-spin" />} Save
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -10,7 +10,14 @@
       "Bash(./vendor/bin/pint --test)",
       "Bash(./vendor/bin/pint --test app/ database/ routes/)",
       "Bash(./vendor/bin/pint --test app/Modules/ProjectManagement/ database/seeders/ProjectSeeder.php)",
-      "Bash(./vendor/bin/pint app/Modules/ProjectManagement/ database/seeders/ProjectSeeder.php)"
+      "Bash(./vendor/bin/pint app/Modules/ProjectManagement/ database/seeders/ProjectSeeder.php)",
+      "Bash(./vendor/bin/pint app/Modules/TaskManagement/ database/seeders/TaskSeeder.php)",
+      "Bash(./vendor/bin/pint app/Modules/ database/seeders/ExpenseSeeder.php database/seeders/CommunicationSeeder.php)",
+      "Bash(./vendor/bin/pint app/Modules/NotificationCenter/ app/Modules/TaskManagement/Services/TaskService.php app/Modules/ExpenseManagement/Services/ExpenseService.php app/Modules/ProjectManagement/Services/ProjectService.php app/Modules/Communication/ app/Http/Controllers/DashboardController.php app/Http/Middleware/HandleInertiaRequests.php database/seeders/NotificationSeeder.php)",
+      "Bash(npx tsc *)",
+      "Bash(php *)",
+      "Bash(xargs cat *)",
+      "Bash(vendor/bin/pint app/Modules/TaskManagement app/Modules/UserManagement/Services/PermissionRegistry.php database/migrations/2026_04_28_000001_add_estimate_to_tasks_table.php database/migrations/2026_04_28_000002_create_time_logs_table.php)"
     ]
   }
 }

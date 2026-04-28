@@ -27,7 +27,9 @@ class PermissionRegistry
                 'label' => 'Roles & Permissions',
                 'permissions' => [
                     'roles.view' => 'View roles',
+                    'roles.create' => 'Create custom roles',
                     'roles.update' => 'Manage role permissions',
+                    'roles.delete' => 'Delete custom roles',
                 ],
             ],
             'projects' => [
@@ -49,6 +51,7 @@ class PermissionRegistry
                     'tasks.delete' => 'Delete tasks',
                     'tasks.assign' => 'Assign tasks to users',
                     'tasks.update-status' => 'Update task status',
+                    'tasks.log-time' => 'Log time on tasks',
                 ],
             ],
             'teams' => [
@@ -56,6 +59,15 @@ class PermissionRegistry
                 'permissions' => [
                     'teams.view' => 'View teams',
                     'teams.manage' => 'Manage teams',
+                ],
+            ],
+            'expenses' => [
+                'label' => 'Expenses',
+                'permissions' => [
+                    'expenses.view' => 'View expenses',
+                    'expenses.create' => 'Submit expenses',
+                    'expenses.approve' => 'Approve / reject expenses',
+                    'expenses.delete' => 'Delete expenses',
                 ],
             ],
             'reports' => [
@@ -70,6 +82,34 @@ class PermissionRegistry
                 'permissions' => [
                     'settings.view' => 'View workspace settings',
                     'settings.update' => 'Update workspace settings',
+                ],
+            ],
+            'meetings' => [
+                'label' => 'Meetings',
+                'permissions' => [
+                    'meetings.view' => 'View meetings',
+                    'meetings.create' => 'Schedule meetings',
+                    'meetings.update' => 'Edit own meetings',
+                    'meetings.delete' => 'Delete / cancel meetings',
+                    'meetings.manage' => 'Manage all meetings & templates',
+                ],
+            ],
+            'okrs' => [
+                'label' => 'OKRs & Goals',
+                'permissions' => [
+                    'okrs.view' => 'View objectives',
+                    'okrs.create' => 'Create objectives',
+                    'okrs.update' => 'Update objectives & key results',
+                    'okrs.delete' => 'Delete objectives',
+                    'okrs.manage' => 'Manage company-wide OKRs',
+                ],
+            ],
+            'feedback' => [
+                'label' => 'Feedback',
+                'permissions' => [
+                    'feedback.view' => 'View feedback cycles',
+                    'feedback.give' => 'Submit feedback when invited',
+                    'feedback.manage' => 'Create and manage feedback cycles',
                 ],
             ],
         ];

@@ -50,7 +50,7 @@ export default function ProjectsIndex({ projects, filters, stats, statuses, prio
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Projects" />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 md:p-8">
+            <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     eyebrow="Workspace"
                     title="Projects"

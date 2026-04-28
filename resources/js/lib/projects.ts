@@ -71,11 +71,10 @@ export const COLOR_DOT: Record<ProjectColor, string> = {
     slate: 'bg-slate-500',
 };
 
-export function formatBudget(value?: number | string | null): string {
-    if (value === null || value === undefined || value === '') return '—';
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    if (Number.isNaN(num)) return '—';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
+import { formatCurrency } from '@/lib/currency';
+
+export function formatBudget(value?: number | string | null, currency?: string | null): string {
+    return formatCurrency(value, currency);
 }
 
 export function formatDate(value?: string | null): string {

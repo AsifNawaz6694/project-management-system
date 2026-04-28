@@ -4,6 +4,7 @@ namespace App\Modules\ProjectManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Modules\ExpenseManagement\Services\ExpenseService;
 use App\Modules\ProjectManagement\Http\Requests\StoreProjectRequest;
 use App\Modules\ProjectManagement\Http\Requests\UpdateProjectRequest;
 use App\Modules\ProjectManagement\Models\Project;
@@ -66,6 +67,7 @@ class ProjectController extends Controller
             'statuses' => Project::STATUSES,
             'priorities' => Project::PRIORITIES,
             'colors' => Project::COLORS,
+            'currencies' => Project::CURRENCIES,
         ]);
     }
 
@@ -89,6 +91,8 @@ class ProjectController extends Controller
             'owner:id,name,avatar,job_title',
             'members:id,name,avatar,job_title,department',
             'milestones',
+            'attachments.uploader:id,name,avatar',
+            'comments.user:id,name,avatar',
         ]);
 
         $activities = Activity::query()
@@ -98,6 +102,32 @@ class ProjectController extends Controller
             ->limit(20)
             ->get();
 
+        $rootComments = $project->comments
+            ->whereNull('parent_id')
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(function ($comment) use ($project) {
+                $replies = $project->comments
+                    ->where('parent_id', $comment->id)
+                    ->sortBy('created_at')
+                    ->values();
+
+                return [
+                    'id' => $comment->id,
+                    'body' => $comment->body,
+                    'created_at' => $comment->created_at?->toISOString(),
+                    'user' => $comment->user,
+                    'replies' => $replies->map(fn ($r) => [
+                        'id' => $r->id,
+                        'body' => $r->body,
+                        'created_at' => $r->created_at?->toISOString(),
+                        'user' => $r->user,
+                    ])->all(),
+                ];
+            });
+
+        $budget = ExpenseService::projectBudgetSummary($project);
+
         return Inertia::render('projects/show', [
             'project' => $project,
             'activities' => $activities,
@@ -105,6 +135,10 @@ class ProjectController extends Controller
                 'total' => $project->milestones->count(),
                 'completed' => $project->milestones->whereNotNull('completed_at')->count(),
             ],
+            'comments' => $rootComments,
+            'budget' => $budget,
+            'canUpload' => $request->user()->hasPermission('projects.update') || $project->owner_id === $request->user()->id,
+            'canSubmitExpense' => $request->user()->hasPermission('expenses.create'),
         ]);
     }
 
@@ -121,6 +155,7 @@ class ProjectController extends Controller
             'statuses' => Project::STATUSES,
             'priorities' => Project::PRIORITIES,
             'colors' => Project::COLORS,
+            'currencies' => Project::CURRENCIES,
         ]);
     }
 

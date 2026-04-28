@@ -3,7 +3,10 @@
 namespace App\Modules\TaskManagement\Services;
 
 use App\Models\User;
+use App\Modules\NotificationCenter\Models\Notification;
+use App\Modules\NotificationCenter\Services\NotificationService;
 use App\Modules\TaskManagement\Models\Task;
+use App\Modules\TaskManagement\Models\TimeLog;
 use App\Modules\UserManagement\Models\Activity;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -11,9 +14,11 @@ use Illuminate\Support\Facades\Storage;
 
 class TaskService
 {
-    public function create(array $data, User $actor): Task
+    public function __construct(private readonly NotificationService $notifications) {}
+
+    public function create(array $data, User $actor, array $files = []): Task
     {
-        return DB::transaction(function () use ($data, $actor) {
+        return DB::transaction(function () use ($data, $actor, $files) {
             $position = (int) Task::where('project_id', $data['project_id'])
                 ->where('status', $data['status'] ?? 'todo')
                 ->whereNull('parent_task_id')
@@ -29,18 +34,38 @@ class TaskService
                 'status' => $data['status'] ?? 'todo',
                 'priority' => $data['priority'] ?? 'medium',
                 'due_date' => $data['due_date'] ?? null,
+                'estimate_minutes' => $data['estimate_minutes'] ?? null,
                 'position' => $position + 1,
                 'completed_at' => ($data['status'] ?? null) === 'completed' ? now() : null,
             ]);
 
             $this->replaceSubtasks($task, $data['subtasks'] ?? [], $actor);
 
+            foreach ($files as $file) {
+                if ($file instanceof UploadedFile) {
+                    $this->attachFile($task, $file, $actor);
+                }
+            }
+
             Activity::log('task.created', [
                 'subject_user_id' => $task->assignee_id,
                 'module' => 'tasks',
-                'description' => "Created task: {$task->title}",
-                'properties' => ['task_id' => $task->id, 'project_id' => $task->project_id],
+                'description' => "Created task: {$task->title}".(count($files) ? ' with '.count($files).' attachment(s)' : ''),
+                'properties' => ['task_id' => $task->id, 'project_id' => $task->project_id, 'attachment_count' => count($files)],
             ]);
+
+            if ($task->assignee_id) {
+                $this->notifications->push((int) $task->assignee_id, [
+                    'group' => Notification::GROUP_TASKS,
+                    'type' => 'task.assigned',
+                    'title' => "{$actor->name} assigned a task to you",
+                    'body' => $task->title,
+                    'icon' => 'list-checks',
+                    'tone' => 'violet',
+                    'link' => route('tasks.show', $task->id, false),
+                    'data' => ['task_id' => $task->id],
+                ], $actor->id);
+            }
 
             return $task->load(['assignee', 'creator', 'subtasks']);
         });
@@ -51,6 +76,7 @@ class TaskService
         return DB::transaction(function () use ($task, $data, $actor) {
             $statusChanged = isset($data['status']) && $data['status'] !== $task->status;
             $oldStatus = $task->status;
+            $oldAssignee = $task->assignee_id;
 
             $task->fill(array_filter([
                 'title' => $data['title'] ?? null,
@@ -58,6 +84,10 @@ class TaskService
                 'priority' => $data['priority'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
             ], fn ($v) => $v !== null));
+
+            if (array_key_exists('estimate_minutes', $data)) {
+                $task->estimate_minutes = $data['estimate_minutes'];
+            }
 
             if (array_key_exists('assignee_id', $data)) {
                 $task->assignee_id = $data['assignee_id'];
@@ -88,6 +118,19 @@ class TaskService
                     'description' => "Updated task: {$task->title}",
                     'properties' => ['task_id' => $task->id, 'project_id' => $task->project_id],
                 ]);
+            }
+
+            if ($task->assignee_id && $task->assignee_id !== $oldAssignee) {
+                $this->notifications->push((int) $task->assignee_id, [
+                    'group' => Notification::GROUP_TASKS,
+                    'type' => 'task.assigned',
+                    'title' => "{$actor->name} assigned a task to you",
+                    'body' => $task->title,
+                    'icon' => 'list-checks',
+                    'tone' => 'violet',
+                    'link' => route('tasks.show', $task->id, false),
+                    'data' => ['task_id' => $task->id],
+                ], $actor->id);
             }
 
             return $task->load(['assignee', 'creator', 'subtasks']);
@@ -170,8 +213,16 @@ class TaskService
 
     public function deleteAttachment($attachment): void
     {
+        $name = $attachment->file_name;
+        $taskId = $attachment->task_id;
         $attachment->deleteFile();
         $attachment->delete();
+
+        Activity::log('task.attachment-removed', [
+            'module' => 'tasks',
+            'description' => "Removed attachment {$name} from task #{$taskId}",
+            'properties' => ['task_id' => $taskId, 'attachment_id' => $attachment->id],
+        ]);
     }
 
     public function addComment(Task $task, User $user, string $body)
@@ -189,6 +240,62 @@ class TaskService
         ]);
 
         return $comment->load('user');
+    }
+
+    public function logTime(Task $task, User $user, array $data): TimeLog
+    {
+        return DB::transaction(function () use ($task, $user, $data) {
+            $log = $task->timeLogs()->create([
+                'user_id' => $user->id,
+                'minutes' => (int) $data['minutes'],
+                'started_at' => $data['started_at'],
+                'note' => $data['note'] ?? null,
+            ]);
+
+            Activity::log('task.time-logged', [
+                'subject_user_id' => $task->assignee_id,
+                'module' => 'tasks',
+                'description' => "Logged {$this->formatMinutes((int) $data['minutes'])} on \"{$task->title}\"",
+                'properties' => [
+                    'task_id' => $task->id,
+                    'project_id' => $task->project_id,
+                    'time_log_id' => $log->id,
+                    'minutes' => (int) $data['minutes'],
+                ],
+            ]);
+
+            return $log->load('user:id,name,avatar');
+        });
+    }
+
+    public function deleteTimeLog(TimeLog $log): void
+    {
+        DB::transaction(function () use ($log) {
+            $task = $log->task;
+            $minutes = $log->minutes;
+            $log->delete();
+
+            Activity::log('task.time-log-removed', [
+                'module' => 'tasks',
+                'description' => "Removed time log of {$this->formatMinutes($minutes)} from \"{$task->title}\"",
+                'properties' => [
+                    'task_id' => $task->id,
+                    'project_id' => $task->project_id,
+                    'minutes' => $minutes,
+                ],
+            ]);
+        });
+    }
+
+    private function formatMinutes(int $minutes): string
+    {
+        if ($minutes < 60) {
+            return "{$minutes}m";
+        }
+        $hours = intdiv($minutes, 60);
+        $rem = $minutes % 60;
+
+        return $rem === 0 ? "{$hours}h" : "{$hours}h {$rem}m";
     }
 
     private function replaceSubtasks(Task $task, array $subtasks, User $actor): void

@@ -1,8 +1,9 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { NotificationBell } from '@/components/notification-bell';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { type BreadcrumbItem } from '@/types';
-import { Bell, Command, Search, Sun } from 'lucide-react';
+import { Command, Search, Sun } from 'lucide-react';
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
     return (
@@ -25,10 +26,7 @@ export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: Breadcrum
                 <Button variant="outline" size="icon" className="size-10 rounded-xl md:hidden">
                     <Search className="size-4" />
                 </Button>
-                <Button variant="outline" size="icon" className="relative size-10 rounded-xl">
-                    <Bell className="size-4" />
-                    <span className="absolute right-2 top-2 size-2 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 ring-2 ring-card" />
-                </Button>
+                <NotificationBell />
                 <Button variant="outline" size="icon" className="hidden size-10 rounded-xl md:inline-flex">
                     <Sun className="size-4" />
                 </Button>

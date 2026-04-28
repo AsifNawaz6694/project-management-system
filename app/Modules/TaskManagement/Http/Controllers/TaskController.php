@@ -85,7 +85,11 @@ class TaskController extends Controller
 
     public function store(StoreTaskRequest $request): RedirectResponse
     {
-        $task = $this->tasks->create($request->validated(), $request->user());
+        $task = $this->tasks->create(
+            $request->validated(),
+            $request->user(),
+            $request->file('attachments') ?? [],
+        );
 
         return redirect()
             ->route('tasks.show', $task)
@@ -107,7 +111,9 @@ class TaskController extends Controller
             'subtasks',
             'comments.user:id,name,avatar',
             'attachments.uploader:id,name,avatar',
+            'timeLogs.user:id,name,avatar',
         ]);
+        $task->append('logged_minutes');
 
         $activities = Activity::query()
             ->where('module', 'tasks')
@@ -117,6 +123,33 @@ class TaskController extends Controller
             ->get()
             ->load('user:id,name,avatar');
 
+        $comments = $task->comments;
+        $rootComments = $comments
+            ->whereNull('parent_id')
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(function ($c) use ($comments) {
+                $replies = $comments
+                    ->where('parent_id', $c->id)
+                    ->sortBy('created_at')
+                    ->values()
+                    ->map(fn ($r) => [
+                        'id' => $r->id,
+                        'body' => $r->body,
+                        'created_at' => $r->created_at?->toISOString(),
+                        'user' => $r->user,
+                    ])->all();
+
+                return [
+                    'id' => $c->id,
+                    'body' => $c->body,
+                    'created_at' => $c->created_at?->toISOString(),
+                    'user' => $c->user,
+                    'replies' => $replies,
+                ];
+            })
+            ->all();
+
         return Inertia::render('tasks/show', [
             'task' => $task,
             'activities' => $activities,
@@ -124,9 +157,11 @@ class TaskController extends Controller
             'assignees' => $this->assignableUsers(),
             'statuses' => Task::STATUSES,
             'priorities' => Task::PRIORITIES,
+            'comments' => $rootComments,
             'canEdit' => $user->hasPermission('tasks.update'),
             'canStatus' => $user->hasPermission('tasks.update') || ($task->assignee_id === $user->id && $user->hasPermission('tasks.update-status')),
             'canDelete' => $user->hasPermission('tasks.delete'),
+            'canLogTime' => $user->hasPermission('tasks.log-time'),
         ]);
     }
 

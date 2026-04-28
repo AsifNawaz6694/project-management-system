@@ -40,18 +40,26 @@ class RolePermissionSeeder extends Seeder
 
         $manager->syncPermissionsBySlug([
             'users.view',
-            'roles.view',
+            'roles.view', 'roles.update',
             'projects.view', 'projects.create', 'projects.update', 'projects.manage-members',
-            'tasks.view', 'tasks.create', 'tasks.update', 'tasks.assign', 'tasks.update-status',
+            'tasks.view', 'tasks.create', 'tasks.update', 'tasks.assign', 'tasks.update-status', 'tasks.log-time',
             'teams.view', 'teams.manage',
+            'expenses.view', 'expenses.create', 'expenses.approve',
             'reports.view', 'reports.export',
             'settings.view',
+            'meetings.view', 'meetings.create', 'meetings.update', 'meetings.delete', 'meetings.manage',
+            'okrs.view', 'okrs.create', 'okrs.update', 'okrs.manage',
+            'feedback.view', 'feedback.give', 'feedback.manage',
         ]);
 
         $employee->syncPermissionsBySlug([
             'projects.view',
-            'tasks.view', 'tasks.update-status',
+            'tasks.view', 'tasks.update-status', 'tasks.log-time',
             'teams.view',
+            'expenses.view', 'expenses.create',
+            'meetings.view', 'meetings.create', 'meetings.update',
+            'okrs.view', 'okrs.create', 'okrs.update',
+            'feedback.view', 'feedback.give',
         ]);
     }
 }

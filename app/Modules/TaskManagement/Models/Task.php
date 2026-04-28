@@ -28,6 +28,7 @@ class Task extends Model
         'status',
         'priority',
         'due_date',
+        'estimate_minutes',
         'position',
         'completed_at',
     ];
@@ -37,7 +38,22 @@ class Task extends Model
         return [
             'due_date' => 'date',
             'completed_at' => 'datetime',
+            'estimate_minutes' => 'integer',
         ];
+    }
+
+    public function timeLogs(): HasMany
+    {
+        return $this->hasMany(TimeLog::class)->latest('started_at');
+    }
+
+    public function getLoggedMinutesAttribute(): int
+    {
+        if ($this->relationLoaded('timeLogs')) {
+            return (int) $this->timeLogs->sum('minutes');
+        }
+
+        return (int) $this->timeLogs()->sum('minutes');
     }
 
     public function project(): BelongsTo

@@ -77,12 +77,24 @@ class AuthenticatedSessionController extends Controller
         if (! $this->twoFactor->verify($user, $request->string('code')->toString())) {
             RateLimiter::hit($key);
 
+            Activity::log('auth.2fa-failed', [
+                'subject_user_id' => $user->id,
+                'module' => 'auth',
+                'description' => "Invalid 2FA code submitted for {$user->email}",
+            ]);
+
             throw ValidationException::withMessages([
                 'code' => 'That code is invalid or has expired.',
             ]);
         }
 
         RateLimiter::clear($key);
+
+        Activity::log('auth.2fa-verified', [
+            'subject_user_id' => $user->id,
+            'module' => 'auth',
+            'description' => '2FA code verified',
+        ]);
 
         return $this->completeLogin($request, $user);
     }

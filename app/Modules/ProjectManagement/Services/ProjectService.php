@@ -3,6 +3,8 @@
 namespace App\Modules\ProjectManagement\Services;
 
 use App\Models\User;
+use App\Modules\NotificationCenter\Models\Notification;
+use App\Modules\NotificationCenter\Services\NotificationService;
 use App\Modules\ProjectManagement\Models\Milestone;
 use App\Modules\ProjectManagement\Models\Project;
 use App\Modules\UserManagement\Models\Activity;
@@ -10,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class ProjectService
 {
+    public function __construct(private readonly NotificationService $notifications) {}
+
     public function create(array $data, User $actor): Project
     {
         return DB::transaction(function () use ($data, $actor) {
@@ -22,6 +26,7 @@ class ProjectService
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
                 'budget' => $data['budget'] ?? null,
+                'currency' => $data['currency'] ?? Project::DEFAULT_CURRENCY,
                 'progress' => $data['progress'] ?? 0,
                 'owner_id' => $data['owner_id'] ?? $actor->id,
             ]);
@@ -35,6 +40,18 @@ class ProjectService
                 'description' => "Created project {$project->title}",
                 'properties' => ['project_id' => $project->id],
             ]);
+
+            $memberIds = array_filter(array_unique([...($data['member_ids'] ?? []), $project->owner_id]));
+            $this->notifications->push($memberIds, [
+                'group' => Notification::GROUP_PROJECTS,
+                'type' => 'project.added',
+                'title' => "{$actor->name} added you to a project",
+                'body' => $project->title,
+                'icon' => 'folder-kanban',
+                'tone' => 'blue',
+                'link' => route('projects.show', $project->slug, false),
+                'data' => ['project_id' => $project->id],
+            ], $actor->id);
 
             return $project->load(['owner', 'members', 'milestones']);
         });
@@ -52,6 +69,7 @@ class ProjectService
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
                 'budget' => $data['budget'] ?? null,
+                'currency' => $data['currency'] ?? null,
             ], fn ($v) => $v !== null));
 
             if (array_key_exists('progress', $data)) {

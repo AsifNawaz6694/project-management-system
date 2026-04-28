@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Modules\NotificationCenter\Models\Notification;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -46,6 +47,14 @@ class HandleInertiaRequests extends Middleware
                 'status' => fn () => $request->session()->get('status'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'notifications' => fn () => $user
+                ? [
+                    'unread' => Notification::query()
+                        ->where('user_id', $user->id)
+                        ->whereNull('read_at')
+                        ->count(),
+                ]
+                : null,
         ]);
     }
 }

@@ -14,7 +14,7 @@ export default function UsersCreate({ roles }: { roles: UserFormRole[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Invite user" />
-            <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 md:p-8">
+            <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     eyebrow="User management"
                     title="Invite a new user"

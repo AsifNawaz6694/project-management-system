@@ -3,6 +3,8 @@
 namespace App\Modules\ProjectManagement\Models;
 
 use App\Models\User;
+use App\Modules\Communication\Models\ProjectComment;
+use App\Modules\ExpenseManagement\Models\Expense;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +23,10 @@ class Project extends Model
 
     public const COLORS = ['violet', 'blue', 'emerald', 'amber', 'rose', 'pink', 'sky', 'slate'];
 
+    public const CURRENCIES = ['SAR', 'PKR', 'USD'];
+
+    public const DEFAULT_CURRENCY = 'SAR';
+
     protected $fillable = [
         'title',
         'slug',
@@ -31,6 +37,7 @@ class Project extends Model
         'start_date',
         'end_date',
         'budget',
+        'currency',
         'progress',
         'owner_id',
     ];
@@ -91,6 +98,21 @@ class Project extends Model
     public function milestones(): HasMany
     {
         return $this->hasMany(Milestone::class)->orderBy('position')->orderBy('id');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(ProjectComment::class)->latest();
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(ProjectAttachment::class)->latest();
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder

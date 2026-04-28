@@ -13,6 +13,9 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ProjectSeeder::class,
             TaskSeeder::class,
+            ExpenseSeeder::class,
+            CommunicationSeeder::class,
+            NotificationSeeder::class,
             ActivitySeeder::class,
         ]);
     }
