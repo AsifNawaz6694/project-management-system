@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Modules\Feedback\Models\FeedbackRequest;
 use App\Modules\UserManagement\Models\Activity;
 use App\Modules\UserManagement\Models\Permission;
 use App\Modules\UserManagement\Models\Role;
@@ -70,6 +71,16 @@ class User extends Authenticatable
     public function twoFactorCodes(): HasMany
     {
         return $this->hasMany(TwoFactorCode::class);
+    }
+
+    public function feedbackRequestsAsReviewer(): HasMany
+    {
+        return $this->hasMany(FeedbackRequest::class, 'reviewer_id');
+    }
+
+    public function feedbackRequestsAsSubject(): HasMany
+    {
+        return $this->hasMany(FeedbackRequest::class, 'subject_user_id');
     }
 
     public function hasRole(string ...$slugs): bool
