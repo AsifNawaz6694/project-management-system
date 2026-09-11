@@ -10,7 +10,7 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: { child
             <AppSidebar />
             <AppContent variant="sidebar" className="bg-transparent">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                <div className="scrollbar-soft flex-1 overflow-y-auto">{children}</div>
+                <div className="scrollbar-soft min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</div>
             </AppContent>
         </AppShell>
     );

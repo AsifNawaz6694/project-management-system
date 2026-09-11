@@ -10,19 +10,45 @@ import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, MessageSquareText, Play, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
-interface UserMini { id: number; name: string; avatar?: string | null }
-interface Question { id: number; body: string; kind: string; required: boolean; position: number }
-interface Req { id: number; status: string; subject: UserMini; reviewer: UserMini; submitted_at: string | null; relationship: string | null }
+interface UserMini {
+    id: number;
+    name: string;
+    avatar?: string | null;
+}
+interface Question {
+    id: number;
+    body: string;
+    kind: string;
+    required: boolean;
+    position: number;
+}
+interface Req {
+    id: number;
+    status: string;
+    subject: UserMini;
+    reviewer: UserMini;
+    submitted_at: string | null;
+    relationship: string | null;
+}
 
 interface Cycle {
-    id: number; name: string; kind: string; description: string | null;
-    starts_at: string; ends_at: string; status: string; anonymous: boolean;
+    id: number;
+    name: string;
+    kind: string;
+    description: string | null;
+    starts_at: string;
+    ends_at: string;
+    status: string;
+    anonymous: boolean;
     creator: UserMini | null;
     questions: Question[];
     requests: Req[];
 }
 
-interface Props { cycle: Cycle; canManage: boolean }
+interface Props {
+    cycle: Cycle;
+    canManage: boolean;
+}
 
 const STATUS_TONE: Record<string, string> = {
     pending: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300 ring-amber-200',
@@ -44,7 +70,10 @@ export default function FeedbackShow({ cycle, canManage }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={cycle.name} />
             <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
-                <Link href={route('feedback.cycles.index')} className="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs font-medium">
+                <Link
+                    href={route('feedback.cycles.index')}
+                    className="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs font-medium"
+                >
                     <ArrowLeft className="size-3.5" /> Back to feedback
                 </Link>
                 <PageHeader
@@ -55,12 +84,25 @@ export default function FeedbackShow({ cycle, canManage }: Props) {
                         canManage && (
                             <>
                                 {cycle.status === 'draft' && (
-                                    <Button onClick={() => router.post(route('feedback.cycles.activate', cycle.id))} className="gap-1.5"><Play className="size-3.5" /> Activate</Button>
+                                    <Button onClick={() => router.post(route('feedback.cycles.activate', cycle.id))} className="gap-1.5">
+                                        <Play className="size-3.5" /> Activate
+                                    </Button>
                                 )}
                                 {cycle.status === 'active' && (
-                                    <Button variant="secondary" onClick={() => router.post(route('feedback.cycles.close', cycle.id))} className="gap-1.5"><X className="size-3.5" /> Close cycle</Button>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => router.post(route('feedback.cycles.close', cycle.id))}
+                                        className="gap-1.5"
+                                    >
+                                        <X className="size-3.5" /> Close cycle
+                                    </Button>
                                 )}
-                                <Button variant="outline" size="sm" className="text-rose-600 ring-rose-200 hover:bg-rose-50 dark:text-rose-400 dark:ring-rose-500/30 hover:ring-rose-300 gap-1.5" onClick={() => setConfirmDelete(true)}>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1.5 text-rose-600 ring-rose-200 hover:bg-rose-50 hover:ring-rose-300 dark:text-rose-400 dark:ring-rose-500/30"
+                                    onClick={() => setConfirmDelete(true)}
+                                >
                                     <Trash2 className="size-3.5" /> Delete
                                 </Button>
                             </>
@@ -70,14 +112,21 @@ export default function FeedbackShow({ cycle, canManage }: Props) {
 
                 <SoftCard>
                     <SoftCardTitle eyebrow="Questions" action={<span className="text-muted-foreground text-xs">{cycle.questions.length}</span>}>
-                        <span className="inline-flex items-center gap-2"><MessageSquareText className="size-4 text-violet-500" /> What reviewers will answer</span>
+                        <span className="inline-flex items-center gap-2">
+                            <MessageSquareText className="size-4 text-blue-500" /> What reviewers will answer
+                        </span>
                     </SoftCardTitle>
                     <SoftCardBody>
                         <ol className="space-y-2 text-sm">
                             {cycle.questions.map((q, i) => (
-                                <li key={q.id} className="bg-muted/30 ring-border/60 ring-1 rounded-xl p-3">
-                                    <p><span className="text-muted-foreground mr-1.5 text-xs font-semibold">{i + 1}.</span> {q.body}</p>
-                                    <p className="text-muted-foreground text-[11px]">{q.kind}{q.required ? ' · required' : ' · optional'}</p>
+                                <li key={q.id} className="bg-muted/30 ring-border/60 rounded-xl p-3 ring-1">
+                                    <p>
+                                        <span className="text-muted-foreground mr-1.5 text-xs font-semibold">{i + 1}.</span> {q.body}
+                                    </p>
+                                    <p className="text-muted-foreground text-[11px]">
+                                        {q.kind}
+                                        {q.required ? ' · required' : ' · optional'}
+                                    </p>
                                 </li>
                             ))}
                         </ol>
@@ -85,17 +134,31 @@ export default function FeedbackShow({ cycle, canManage }: Props) {
                 </SoftCard>
 
                 <SoftCard>
-                    <SoftCardTitle eyebrow="Reviewers" action={<span className="text-muted-foreground text-xs">{cycle.requests.length}</span>}>Pairs</SoftCardTitle>
+                    <SoftCardTitle eyebrow="Reviewers" action={<span className="text-muted-foreground text-xs">{cycle.requests.length}</span>}>
+                        Pairs
+                    </SoftCardTitle>
                     <SoftCardBody>
                         <ul className="space-y-2">
                             {cycle.requests.map((r) => (
-                                <li key={r.id} className="bg-muted/30 ring-border/60 ring-1 flex items-center gap-3 rounded-xl p-3">
-                                    <span className="from-violet-500 to-indigo-600 ring-card flex size-8 items-center justify-center rounded-full bg-gradient-to-br text-[10px] font-bold text-white ring-2">{getInitials(r.reviewer.name)}</span>
+                                <li key={r.id} className="bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-3 ring-1">
+                                    <span className="ring-card flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[10px] font-bold text-white ring-2">
+                                        {getInitials(r.reviewer.name)}
+                                    </span>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-semibold">{r.reviewer.name} <span className="text-muted-foreground text-[11px]">→</span> {r.subject.name}</p>
-                                        <p className="text-muted-foreground text-[11px]">{r.relationship ?? '—'}{r.submitted_at ? ` · submitted ${new Date(r.submitted_at).toLocaleDateString()}` : ''}</p>
+                                        <p className="text-sm font-semibold">
+                                            {r.reviewer.name} <span className="text-muted-foreground text-[11px]">→</span> {r.subject.name}
+                                        </p>
+                                        <p className="text-muted-foreground text-[11px]">
+                                            {r.relationship ?? '—'}
+                                            {r.submitted_at ? ` · submitted ${new Date(r.submitted_at).toLocaleDateString()}` : ''}
+                                        </p>
                                     </div>
-                                    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 capitalize', STATUS_TONE[r.status] ?? '')}>
+                                    <span
+                                        className={cn(
+                                            'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ring-1',
+                                            STATUS_TONE[r.status] ?? '',
+                                        )}
+                                    >
                                         {r.status === 'submitted' && <CheckCircle2 className="mr-1 size-3" />}
                                         {r.status}
                                     </span>

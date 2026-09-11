@@ -1,9 +1,9 @@
+import { FilterSelect, toArray } from '@/components/filter-select';
 import { PageHeader } from '@/components/page-header';
 import { RoleBadge } from '@/components/role-badge';
 import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInitials } from '@/hooks/use-initials';
 import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
@@ -25,11 +25,11 @@ interface UsersIndexProps {
 }
 
 const AVATAR_TONES = [
-    'from-violet-500 to-indigo-600',
+    'from-blue-500 to-blue-700',
     'from-blue-500 to-cyan-600',
     'from-emerald-500 to-teal-600',
     'from-amber-500 to-orange-600',
-    'from-pink-500 to-fuchsia-600',
+    'from-slate-500 to-slate-700',
     'from-rose-500 to-red-600',
 ];
 
@@ -45,8 +45,8 @@ export default function UsersIndex({ users, filters, roles, stats }: UsersIndexP
     const { can } = usePermissions();
     const getInitials = useInitials();
     const [search, setSearch] = useState(filters.search ?? '');
-    const [role, setRole] = useState(filters.role ?? 'all');
-    const [status, setStatus] = useState(filters.status ?? 'all');
+    const [role, setRole] = useState<string[]>(toArray(filters.role));
+    const [status, setStatus] = useState<string[]>(toArray(filters.status));
 
     useEffect(() => {
         const handle = setTimeout(() => {
@@ -54,14 +54,13 @@ export default function UsersIndex({ users, filters, roles, stats }: UsersIndexP
                 route('users.index'),
                 {
                     search: search || undefined,
-                    role: role === 'all' ? undefined : role,
-                    status: status === 'all' ? undefined : status,
+                    role: role.length ? role : undefined,
+                    status: status.length ? status : undefined,
                 },
                 { preserveState: true, replace: true, preserveScroll: true },
             );
         }, 250);
         return () => clearTimeout(handle);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search, role, status]);
 
     return (
@@ -90,9 +89,9 @@ export default function UsersIndex({ users, filters, roles, stats }: UsersIndexP
                     <StatCard label="Managers" value={stats.managers} icon={Shield} accent="blue" />
                 </section>
 
-                <section className="bg-card shadow-soft-sm ring-border/60 ring-1 flex flex-col gap-3 rounded-2xl p-3 md:flex-row md:items-center">
+                <section className="bg-card shadow-soft-sm ring-border/60 flex flex-col gap-3 rounded-2xl p-3 ring-1 md:flex-row md:items-center">
                     <div className="relative flex-1">
-                        <Search className="text-muted-foreground absolute left-3.5 top-1/2 size-4 -translate-y-1/2" />
+                        <Search className="text-muted-foreground absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
                         <Input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
@@ -101,37 +100,31 @@ export default function UsersIndex({ users, filters, roles, stats }: UsersIndexP
                         />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <Select value={role} onValueChange={setRole}>
-                            <SelectTrigger className="h-11 w-[160px] rounded-xl">
-                                <SelectValue placeholder="All roles" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                                <SelectItem value="all">All roles</SelectItem>
-                                {roles.map((r) => (
-                                    <SelectItem key={r.slug} value={r.slug}>
-                                        {r.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select value={status} onValueChange={setStatus}>
-                            <SelectTrigger className="h-11 w-[160px] rounded-xl">
-                                <SelectValue placeholder="All statuses" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl">
-                                <SelectItem value="all">All statuses</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="invited">Invited</SelectItem>
-                                <SelectItem value="suspended">Suspended</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <FilterSelect
+                            label="Roles"
+                            className="w-[10rem]"
+                            value={role}
+                            onChange={setRole}
+                            options={roles.map((r) => ({ value: r.slug, label: r.name }))}
+                        />
+                        <FilterSelect
+                            label="Statuses"
+                            className="w-[10rem]"
+                            value={status}
+                            onChange={setStatus}
+                            options={[
+                                { value: 'active', label: 'Active', color: 'emerald' },
+                                { value: 'invited', label: 'Invited', color: 'amber' },
+                                { value: 'suspended', label: 'Suspended', color: 'rose' },
+                            ]}
+                        />
                     </div>
                 </section>
 
                 {users.data.length === 0 ? (
-                    <div className="bg-card shadow-soft-sm ring-border/60 ring-1 flex flex-col items-center justify-center gap-3 rounded-2xl p-12 text-center">
-                        <div className="bg-violet-50 dark:bg-violet-500/10 rounded-2xl p-3">
-                            <Users className="size-5 text-violet-600 dark:text-violet-300" />
+                    <div className="bg-card shadow-soft-sm ring-border/60 flex flex-col items-center justify-center gap-3 rounded-2xl p-12 text-center ring-1">
+                        <div className="rounded-2xl bg-blue-50 p-3 dark:bg-blue-500/10">
+                            <Users className="size-5 text-blue-600 dark:text-blue-300" />
                         </div>
                         <div>
                             <p className="font-display font-bold">No users match those filters</p>
@@ -144,18 +137,24 @@ export default function UsersIndex({ users, filters, roles, stats }: UsersIndexP
                             <Link
                                 key={u.id}
                                 href={route('users.show', u.id)}
-                                className="group bg-card shadow-soft-sm hover:shadow-soft-lg ring-border/60 hover:ring-foreground/20 ring-1 relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1"
+                                className="group bg-card shadow-soft-sm hover:shadow-soft-lg ring-border/60 hover:ring-foreground/20 relative flex flex-col overflow-hidden rounded-2xl ring-1 transition-all duration-300 hover:-translate-y-1"
                             >
                                 <div className={`relative h-20 bg-gradient-to-br ${tone(u.id)} overflow-hidden`}>
                                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.25),transparent)]" />
                                 </div>
                                 <div className="relative -mt-9 flex flex-col items-center px-5 pb-5 text-center">
-                                    <div className={`flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br ${tone(u.id)} text-lg font-bold text-white shadow-soft-md ring-4 ring-card`}>
+                                    <div
+                                        className={`flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br ${tone(u.id)} shadow-soft-md ring-card text-lg font-bold text-white ring-4`}
+                                    >
                                         {u.initials || getInitials(u.name)}
                                     </div>
                                     <p className="font-display mt-3 truncate text-base font-bold">{u.name}</p>
-                                    <p className="text-muted-foreground truncate text-xs">{u.job_title || u.department || '—'}</p>
-                                    {u.roles?.[0] && <div className="mt-2"><RoleBadge role={u.roles[0].slug} /></div>}
+                                    <p className="text-muted-foreground truncate text-xs">{u.job_title || u.department?.name || '—'}</p>
+                                    {u.roles?.[0] && (
+                                        <div className="mt-2">
+                                            <RoleBadge role={u.roles[0].slug} />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-muted-foreground bg-muted/40 border-border/50 mt-auto space-y-1 border-t px-5 py-3 text-[11px]">
                                     <div className="flex items-center gap-2 truncate">
@@ -170,10 +169,10 @@ export default function UsersIndex({ users, filters, roles, stats }: UsersIndexP
                                     )}
                                 </div>
                                 {u.status && (
-                                    <div className="border-border/50 absolute right-3 top-3">
+                                    <div className="border-border/50 absolute top-3 right-3">
                                         <span
                                             className={
-                                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset capitalize ' +
+                                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ring-1 ring-inset ' +
                                                 (STATUS_CHIP[u.status as string] ?? STATUS_CHIP.active)
                                             }
                                         >
@@ -199,8 +198,8 @@ export default function UsersIndex({ users, filters, roles, stats }: UsersIndexP
                                 className={
                                     'inline-flex h-9 min-w-9 items-center justify-center rounded-lg px-3 text-xs font-semibold transition-all ' +
                                     (link.active
-                                        ? 'shadow-soft-md from-violet-600 to-indigo-600 bg-gradient-to-br text-white'
-                                        : 'bg-card ring-border ring-1 text-muted-foreground hover:text-foreground hover:shadow-soft-sm')
+                                        ? 'shadow-soft-md bg-gradient-to-br from-blue-600 to-blue-700 text-white'
+                                        : 'bg-card ring-border text-muted-foreground hover:text-foreground hover:shadow-soft-sm ring-1')
                                 }
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />

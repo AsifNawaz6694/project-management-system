@@ -5,9 +5,9 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { LoaderCircle, MailCheck, RotateCcw } from 'lucide-react';
 import { type ClipboardEvent, type FormEventHandler, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 
-interface ChallengeForm {
+type ChallengeForm = {
     code: string;
-}
+};
 
 interface ChallengeProps {
     email?: string;
@@ -80,7 +80,11 @@ export default function TwoFactorChallenge({ email, status, cooldown }: Challeng
     return (
         <AuthLayout
             title="Check your email"
-            description={email ? `We sent a 6-digit code to ${maskEmail(email)}. Enter it below to finish signing in.` : 'Enter the 6-digit code we just sent to your email.'}
+            description={
+                email
+                    ? `We sent a 6-digit code to ${maskEmail(email)}. Enter it below to finish signing in.`
+                    : 'Enter the 6-digit code we just sent to your email.'
+            }
         >
             <Head title="Verify your identity" />
 
@@ -97,7 +101,7 @@ export default function TwoFactorChallenge({ email, status, cooldown }: Challeng
                             value={digit}
                             onChange={(e) => handleChange(i, e.target.value)}
                             onKeyDown={(e) => handleKey(i, e)}
-                            className="bg-card ring-border/70 shadow-soft-xs focus-visible:ring-violet-500/40 focus-visible:border-violet-500 size-13 sm:size-14 rounded-xl text-center text-2xl font-bold tabular-nums ring-1 transition-all focus-visible:outline-none focus-visible:ring-4"
+                            className="bg-card ring-border/70 shadow-soft-xs size-13 rounded-xl text-center text-2xl font-bold tabular-nums ring-1 transition-all focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/40 focus-visible:outline-none sm:size-14"
                         />
                     ))}
                 </div>

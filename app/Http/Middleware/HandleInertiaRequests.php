@@ -17,7 +17,7 @@ class HandleInertiaRequests extends Middleware
 
     public function share(Request $request): array
     {
-        $user = $request->user()?->loadMissing('roles.permissions');
+        $user = $request->user()?->loadMissing(['roles.permissions', 'directPermissions', 'department']);
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),
@@ -29,7 +29,8 @@ class HandleInertiaRequests extends Middleware
                     'avatar' => $user->avatar,
                     'phone' => $user->phone,
                     'job_title' => $user->job_title,
-                    'department' => $user->department,
+                    'department' => $user->departmentName(),
+                    'department_id' => $user->department_id,
                     'status' => $user->status,
                     'initials' => $user->initials,
                     'roles' => $user->roles->map(fn ($role) => [

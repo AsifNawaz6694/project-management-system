@@ -17,22 +17,73 @@ interface StatCardProps {
 }
 
 const ACCENTS: Record<NonNullable<StatCardProps['accent']>, { iconBg: string; iconText: string; bar: string; chip: string; glow: string }> = {
-    violet: { iconBg: 'bg-gradient-to-br from-violet-500 to-purple-600', iconText: 'text-white', bar: 'from-violet-500 via-fuchsia-500 to-purple-600', chip: 'bg-violet-50 text-violet-700 ring-violet-200/70 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30', glow: 'rgba(124,58,237,0.45)' },
-    emerald: { iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600', iconText: 'text-white', bar: 'from-emerald-500 via-green-500 to-teal-600', chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30', glow: 'rgba(16,185,129,0.45)' },
-    amber: { iconBg: 'bg-gradient-to-br from-amber-400 to-orange-500', iconText: 'text-white', bar: 'from-amber-400 via-orange-400 to-rose-500', chip: 'bg-amber-50 text-amber-700 ring-amber-200/70 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30', glow: 'rgba(245,158,11,0.45)' },
-    rose: { iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600', iconText: 'text-white', bar: 'from-rose-500 via-pink-500 to-fuchsia-600', chip: 'bg-rose-50 text-rose-700 ring-rose-200/70 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/30', glow: 'rgba(244,63,94,0.45)' },
-    blue: { iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600', iconText: 'text-white', bar: 'from-blue-500 via-cyan-500 to-indigo-600', chip: 'bg-blue-50 text-blue-700 ring-blue-200/70 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/30', glow: 'rgba(59,130,246,0.45)' },
-    slate: { iconBg: 'bg-gradient-to-br from-slate-600 to-slate-800', iconText: 'text-white', bar: 'from-slate-500 to-slate-700', chip: 'bg-slate-100 text-slate-700 ring-slate-200/70 dark:bg-slate-500/10 dark:text-slate-300 dark:ring-slate-500/30', glow: 'rgba(100,116,139,0.4)' },
-    sky: { iconBg: 'bg-gradient-to-br from-sky-400 to-cyan-500', iconText: 'text-white', bar: 'from-sky-400 to-cyan-500', chip: 'bg-sky-50 text-sky-700 ring-sky-200/70 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/30', glow: 'rgba(14,165,233,0.45)' },
-    pink: { iconBg: 'bg-gradient-to-br from-pink-500 to-fuchsia-600', iconText: 'text-white', bar: 'from-pink-500 via-fuchsia-500 to-purple-600', chip: 'bg-pink-50 text-pink-700 ring-pink-200/70 dark:bg-pink-500/10 dark:text-pink-300 dark:ring-pink-500/30', glow: 'rgba(236,72,153,0.45)' },
+    violet: {
+        iconBg: 'bg-indigo-50 dark:bg-indigo-500/12',
+        iconText: 'text-indigo-700 dark:text-indigo-300',
+        bar: 'from-indigo-500 to-indigo-500',
+        chip: 'bg-indigo-50 text-indigo-700 ring-indigo-200/70 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/30',
+        glow: 'rgba(74,58,167,0.10)',
+    },
+    emerald: {
+        iconBg: 'bg-emerald-50 dark:bg-emerald-500/12',
+        iconText: 'text-emerald-700 dark:text-emerald-300',
+        bar: 'from-emerald-500 to-emerald-500',
+        chip: 'bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30',
+        glow: 'rgba(27,175,122,0.10)',
+    },
+    amber: {
+        iconBg: 'bg-amber-50 dark:bg-amber-500/12',
+        iconText: 'text-amber-700 dark:text-amber-300',
+        bar: 'from-amber-500 to-amber-500',
+        chip: 'bg-amber-50 text-amber-700 ring-amber-200/70 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30',
+        glow: 'rgba(237,161,0,0.10)',
+    },
+    rose: {
+        iconBg: 'bg-red-50 dark:bg-red-500/12',
+        iconText: 'text-red-700 dark:text-red-300',
+        bar: 'from-red-500 to-red-500',
+        chip: 'bg-red-50 text-red-700 ring-red-200/70 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30',
+        glow: 'rgba(227,73,72,0.10)',
+    },
+    blue: {
+        iconBg: 'bg-blue-50 dark:bg-blue-500/12',
+        iconText: 'text-blue-700 dark:text-blue-300',
+        bar: 'from-blue-500 to-blue-500',
+        chip: 'bg-blue-50 text-blue-700 ring-blue-200/70 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/30',
+        glow: 'rgba(42,120,214,0.10)',
+    },
+    slate: {
+        iconBg: 'bg-slate-100 dark:bg-slate-500/12',
+        iconText: 'text-slate-700 dark:text-slate-300',
+        bar: 'from-slate-400 to-slate-400',
+        chip: 'bg-slate-100 text-slate-700 ring-slate-200/70 dark:bg-slate-500/10 dark:text-slate-300 dark:ring-slate-500/30',
+        glow: 'rgba(100,116,139,0.10)',
+    },
+    sky: {
+        iconBg: 'bg-sky-50 dark:bg-sky-500/12',
+        iconText: 'text-sky-700 dark:text-sky-300',
+        bar: 'from-sky-500 to-sky-500',
+        chip: 'bg-sky-50 text-sky-700 ring-sky-200/70 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/30',
+        glow: 'rgba(85,152,231,0.10)',
+    },
+    pink: {
+        iconBg: 'bg-pink-50 dark:bg-pink-500/12',
+        iconText: 'text-pink-700 dark:text-pink-300',
+        bar: 'from-pink-400 to-pink-400',
+        chip: 'bg-pink-50 text-pink-700 ring-pink-200/70 dark:bg-pink-500/10 dark:text-pink-300 dark:ring-pink-500/30',
+        glow: 'rgba(232,123,164,0.10)',
+    },
 };
 
 export function StatCard({ label, value, delta, trend, icon: Icon, accent = 'violet', className, sub, sparkline }: StatCardProps) {
     const a = ACCENTS[accent];
     const TrendIcon = trend === 'down' ? ArrowDownRight : ArrowUpRight;
-    const numericValue = typeof value === 'number'
-        ? value
-        : (typeof value === 'string' && /^[\d,.]+$/.test(value.replace(/[\s%]/g, '')) ? Number(value.replace(/[^\d.-]/g, '')) : null);
+    const numericValue =
+        typeof value === 'number'
+            ? value
+            : typeof value === 'string' && /^[\d,.]+$/.test(value.replace(/[\s%]/g, ''))
+              ? Number(value.replace(/[^\d.-]/g, ''))
+              : null;
 
     const cardRef = useRef<HTMLDivElement>(null);
     const [glow, setGlow] = useState({ x: 50, y: 50, on: false });
@@ -52,7 +103,7 @@ export function StatCard({ label, value, delta, trend, icon: Icon, accent = 'vio
             onMouseMove={onMove}
             onMouseLeave={onLeave}
             className={cn(
-                'group bg-card shadow-soft-sm hover:shadow-soft-xl ring-1 ring-border/60 hover:ring-foreground/20 relative overflow-hidden rounded-2xl p-5 transition-all duration-300',
+                'group bg-card shadow-soft-sm hover:shadow-soft-xl ring-border/60 hover:ring-foreground/20 relative overflow-hidden rounded-2xl p-5 ring-1 transition-all duration-300',
                 className,
             )}
             style={{
@@ -64,15 +115,17 @@ export function StatCard({ label, value, delta, trend, icon: Icon, accent = 'vio
                 className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 style={{ background: `radial-gradient(circle 240px at ${glow.x}% ${glow.y}%, ${a.glow}, transparent 60%)` }}
             />
-            <div className={cn('absolute inset-x-0 top-0 h-1 bg-gradient-to-r animate-gradient', a.bar)} />
-            <div className="shimmer-overlay opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            <div className={cn('absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r', a.bar)} />
 
             <div className="relative flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                    <p className="text-muted-foreground text-[11px] font-bold uppercase tracking-[0.14em]">{label}</p>
-                    <p className="font-display mt-2 text-4xl font-bold leading-none tracking-tight tabular-nums">
+                    <p className="text-muted-foreground text-[11px] font-bold tracking-[0.14em] uppercase">{label}</p>
+                    <p className="font-display mt-2 text-3xl leading-none font-bold tracking-tight tabular-nums">
                         {numericValue !== null ? (
-                            <AnimatedNumber value={numericValue} formatter={typeof value === 'string' && value.includes('%') ? (n) => `${n}%` : undefined} />
+                            <AnimatedNumber
+                                value={numericValue}
+                                formatter={typeof value === 'string' && value.includes('%') ? (n) => `${n}%` : undefined}
+                            />
                         ) : (
                             <span className="animate-count">{value}</span>
                         )}
@@ -81,8 +134,10 @@ export function StatCard({ label, value, delta, trend, icon: Icon, accent = 'vio
                         <span
                             className={cn(
                                 'mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
-                                trend === 'up' && 'bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30',
-                                trend === 'down' && 'bg-rose-50 text-rose-700 ring-rose-200/70 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/30',
+                                trend === 'up' &&
+                                    'bg-emerald-50 text-emerald-700 ring-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30',
+                                trend === 'down' &&
+                                    'bg-rose-50 text-rose-700 ring-rose-200/70 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/30',
                                 (trend === 'flat' || !trend) && a.chip,
                             )}
                         >
@@ -93,17 +148,18 @@ export function StatCard({ label, value, delta, trend, icon: Icon, accent = 'vio
                     {sub && <p className="text-muted-foreground mt-2 line-clamp-2 text-xs">{sub}</p>}
                 </div>
                 {Icon && (
-                    <div className={cn('relative flex size-12 items-center justify-center rounded-2xl shadow-soft-md ring-1 ring-white/30 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6', a.iconBg, a.iconText)}>
+                    <div className={cn('flex size-11 items-center justify-center rounded-xl', a.iconBg, a.iconText)}>
                         <Icon className="size-5" />
-                        <span aria-hidden className="absolute inset-0 -z-10 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:animate-pulse-ring" />
-                        <span aria-hidden className="absolute -right-1 -top-1 size-2 rounded-full bg-white/90 animate-sparkle" />
                     </div>
                 )}
             </div>
 
             {sparkline && sparkline.length > 1 && (
-                <div className="relative mt-4 -mx-1 h-10 opacity-90">
-                    <MiniSparkline points={sparkline} tone={accent === 'slate' ? 'violet' : (accent as 'violet' | 'emerald' | 'amber' | 'rose' | 'blue' | 'sky' | 'pink')} />
+                <div className="relative -mx-1 mt-4 h-10 opacity-90">
+                    <MiniSparkline
+                        points={sparkline}
+                        tone={accent === 'slate' ? 'violet' : (accent as 'violet' | 'emerald' | 'amber' | 'rose' | 'blue' | 'sky' | 'pink')}
+                    />
                 </div>
             )}
         </div>

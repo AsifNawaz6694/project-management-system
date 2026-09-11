@@ -1,19 +1,28 @@
 import { PageHeader } from '@/components/page-header';
 import { SoftCard, SoftCardBody, SoftCardTitle } from '@/components/soft-card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, LoaderCircle, Star, X } from 'lucide-react';
 
-interface Question { id: number; body: string; kind: string; required: boolean }
-interface Response { feedback_question_id: number; answer: string | null; rating: number | null }
+interface Question {
+    id: number;
+    body: string;
+    kind: string;
+    required: boolean;
+}
+interface Response {
+    feedback_question_id: number;
+    answer: string | null;
+    rating: number | null;
+}
 
 interface Props {
     request: {
-        id: number; status: string;
+        id: number;
+        status: string;
         cycle: { id: number; name: string; kind: string; description: string | null; questions: Question[] };
         subject: { id: number; name: string; avatar?: string | null; job_title?: string | null };
         responses: Response[];
@@ -40,7 +49,7 @@ export default function FeedbackRespond({ request: req }: Props) {
     };
 
     const decline = () => {
-        if (!confirm('Decline this feedback request? You won\'t be asked again for this subject in this cycle.')) return;
+        if (!confirm("Decline this feedback request? You won't be asked again for this subject in this cycle.")) return;
         router.post(route('feedback.requests.decline', req.id));
     };
 
@@ -54,7 +63,10 @@ export default function FeedbackRespond({ request: req }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Feedback for ${req.subject.name}`} />
             <form onSubmit={submit} className="flex w-full flex-1 flex-col gap-5 p-4 md:p-6">
-                <Link href={route('feedback.cycles.index')} className="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs font-medium">
+                <Link
+                    href={route('feedback.cycles.index')}
+                    className="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs font-medium"
+                >
                     <ArrowLeft className="size-3.5" /> Back to feedback
                 </Link>
 
@@ -78,7 +90,9 @@ export default function FeedbackRespond({ request: req }: Props) {
                                                 onClick={() => setAnswer(q.id, { rating: n })}
                                                 className={cn(
                                                     'flex size-10 items-center justify-center rounded-xl transition-all',
-                                                    (data.responses[q.id].rating ?? 0) >= n ? 'shadow-soft-sm bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-muted/40 ring-border ring-1 text-muted-foreground hover:text-foreground',
+                                                    (data.responses[q.id].rating ?? 0) >= n
+                                                        ? 'shadow-soft-sm bg-gradient-to-br from-amber-400 to-orange-500 text-white'
+                                                        : 'bg-muted/40 ring-border text-muted-foreground hover:text-foreground ring-1',
                                                 )}
                                             >
                                                 <Star className="size-5" />
@@ -93,8 +107,10 @@ export default function FeedbackRespond({ request: req }: Props) {
                                                 type="button"
                                                 onClick={() => setAnswer(q.id, { answer: v })}
                                                 className={cn(
-                                                    'rounded-xl px-4 py-2 text-sm font-semibold capitalize transition-all ring-1',
-                                                    data.responses[q.id].answer === v ? 'bg-violet-500 text-white ring-violet-500' : 'bg-card text-muted-foreground hover:text-foreground ring-border',
+                                                    'rounded-xl px-4 py-2 text-sm font-semibold capitalize ring-1 transition-all',
+                                                    data.responses[q.id].answer === v
+                                                        ? 'bg-blue-500 text-white ring-blue-500'
+                                                        : 'bg-card text-muted-foreground hover:text-foreground ring-border',
                                                 )}
                                             >
                                                 {v}
@@ -107,7 +123,7 @@ export default function FeedbackRespond({ request: req }: Props) {
                                         onChange={(e) => setAnswer(q.id, { answer: e.target.value })}
                                         rows={5}
                                         required={q.required}
-                                        className="bg-card shadow-soft-xs ring-border focus-visible:ring-violet-200/60 ring-1 w-full rounded-xl px-3.5 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-4"
+                                        className="bg-card shadow-soft-xs ring-border w-full rounded-xl px-3.5 py-2.5 text-sm ring-1 focus-visible:ring-4 focus-visible:ring-blue-200/60 focus-visible:outline-none"
                                     />
                                 )}
                             </SoftCardBody>
@@ -116,7 +132,13 @@ export default function FeedbackRespond({ request: req }: Props) {
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
-                    <Button type="button" variant="outline" size="sm" onClick={decline} className="text-rose-600 ring-rose-200 hover:bg-rose-50 dark:text-rose-400 dark:ring-rose-500/30 hover:ring-rose-300 gap-1.5">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={decline}
+                        className="gap-1.5 text-rose-600 ring-rose-200 hover:bg-rose-50 hover:ring-rose-300 dark:text-rose-400 dark:ring-rose-500/30"
+                    >
                         <X className="size-3.5" /> Decline
                     </Button>
                     <Button type="submit" disabled={processing} className="gap-2">

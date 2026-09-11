@@ -10,28 +10,15 @@ class NotificationSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('email', 'admin@raqtan.com')->first();
-        $manager = User::where('email', 'manager@raqtan.com')->first();
-        $employee = User::where('email', 'employee@raqtan.com')->first();
+        $admin = User::where('email', 'asif@bargoventures.com')->first();
+        $manager = User::where('email', 'saad@bargoventures.com')->first();
+        $employee = User::where('email', 'yousuf@bargoventures.com')->first();
 
         if (! $admin || ! $manager || ! $employee) {
             return;
         }
 
         $rows = [
-            [
-                'user_id' => $manager->id,
-                'actor_id' => $employee->id,
-                'group' => 'expenses',
-                'type' => 'expense.submitted',
-                'title' => 'Hamza Ali submitted an expense',
-                'body' => 'EXP-1003 · Team offsite lunch · USD 280.00',
-                'icon' => 'wallet',
-                'tone' => 'amber',
-                'link' => '/expenses',
-                'minutes_ago' => 8,
-                'read' => false,
-            ],
             [
                 'user_id' => $manager->id,
                 'actor_id' => $admin->id,
@@ -85,19 +72,6 @@ class NotificationSeeder extends Seeder
                 'read' => false,
             ],
             [
-                'user_id' => $employee->id,
-                'actor_id' => $manager->id,
-                'group' => 'expenses',
-                'type' => 'expense.approved',
-                'title' => 'Sarah Mansoor approved your expense',
-                'body' => 'EXP-1002 · User research participants',
-                'icon' => 'check-circle-2',
-                'tone' => 'emerald',
-                'link' => '/expenses',
-                'minutes_ago' => 60 * 24,
-                'read' => true,
-            ],
-            [
                 'user_id' => $admin->id,
                 'actor_id' => $manager->id,
                 'group' => 'projects',
@@ -115,8 +89,8 @@ class NotificationSeeder extends Seeder
                 'actor_id' => null,
                 'group' => 'system',
                 'type' => 'workspace.welcome',
-                'title' => 'Welcome to Raqtan PMS',
-                'body' => 'Your workspace is fully wired with projects, tasks, expenses, files, and notifications.',
+                'title' => 'Welcome to Raqtan TMS',
+                'body' => 'Your workspace is fully wired with projects, tasks, files, and notifications.',
                 'icon' => 'sparkles',
                 'tone' => 'violet',
                 'link' => '/dashboard',

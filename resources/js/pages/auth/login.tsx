@@ -8,11 +8,11 @@ import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle, ShieldCheck } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 
-interface LoginForm {
+type LoginForm = {
     email: string;
     password: string;
     remember: boolean;
-}
+};
 
 interface LoginProps {
     status?: string;
@@ -32,15 +32,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout
-            title="Welcome back"
-            description="Sign in to continue. We'll send a verification code to your email to confirm it's you."
-        >
+        <AuthLayout title="Welcome back" description="Sign in to continue. We'll send a verification code to your email to confirm it's you.">
             <Head title="Sign in" />
 
             <form onSubmit={submit} className="flex flex-col gap-5">
                 <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-muted-foreground text-[11px] font-bold uppercase tracking-[0.14em]">
+                    <Label htmlFor="email" className="text-muted-foreground text-[11px] font-bold tracking-[0.14em] uppercase">
                         Work email
                     </Label>
                     <Input
@@ -59,7 +56,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
 
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                        <Label htmlFor="password" className="text-muted-foreground text-[11px] font-bold uppercase tracking-[0.14em]">
+                        <Label htmlFor="password" className="text-muted-foreground text-[11px] font-bold tracking-[0.14em] uppercase">
                             Password
                         </Label>
                         {canResetPassword && (
@@ -86,7 +83,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                         type="checkbox"
                         checked={data.remember}
                         onChange={(e) => setData('remember', e.target.checked)}
-                        className="size-4 accent-violet-600"
+                        className="size-4 accent-blue-600"
                     />
                     <span className="text-muted-foreground">Keep me signed in on this device</span>
                 </label>

@@ -3,6 +3,8 @@
 namespace App\Modules\Okrs\Services;
 
 use App\Models\User;
+use App\Modules\NotificationCenter\Models\Notification;
+use App\Modules\NotificationCenter\Services\NotificationService;
 use App\Modules\Okrs\Models\KeyResult;
 use App\Modules\Okrs\Models\KrUpdate;
 use App\Modules\Okrs\Models\Objective;
@@ -11,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class ObjectiveService
 {
+    public function __construct(private readonly NotificationService $notifications) {}
+
     public function create(array $data, User $owner): Objective
     {
         return DB::transaction(function () use ($data, $owner) {
@@ -109,6 +113,22 @@ class ObjectiveService
                 'description' => "Updated KR \"{$kr->title}\" → {$data['value']}",
                 'properties' => ['key_result_id' => $kr->id, 'objective_id' => $kr->objective_id, 'kr_update_id' => $update->id],
             ]);
+
+            // Keep the objective owner in the loop when someone else moves a KR.
+            $objective = $kr->objective;
+
+            if ($objective && $objective->owner_id) {
+                $this->notifications->push((int) $objective->owner_id, [
+                    'group' => Notification::GROUP_SYSTEM,
+                    'type' => 'okr.key-result-updated',
+                    'title' => "{$actor->name} updated a key result",
+                    'body' => $kr->title.' · '.$objective->title,
+                    'icon' => 'target',
+                    'tone' => 'violet',
+                    'link' => route('okrs.show', $objective->id, false),
+                    'data' => ['objective_id' => $objective->id, 'key_result_id' => $kr->id],
+                ], $actor->id);
+            }
 
             return $update->load('recorder');
         });

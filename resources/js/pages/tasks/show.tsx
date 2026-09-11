@@ -1,7 +1,10 @@
 import { CommentThread, type CommentNode } from '@/components/comment-thread';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
+import { RichText } from '@/components/rich-text';
 import { SoftCard, SoftCardBody, SoftCardTitle } from '@/components/soft-card';
+import { StatusReasonDialog, type PendingTransition } from '@/components/status-reason-dialog';
+import { TaskLinksPanel, type TaskLinkGroups } from '@/components/task-links-panel';
 import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -9,22 +12,29 @@ import AppLayout from '@/layouts/app-layout';
 import { COLOR_DOT, type ProjectColor } from '@/lib/projects';
 import {
     TASK_PRIORITY_META,
-    TASK_STATUS_META,
+    indexStatuses,
     isOverdue,
     relativeDue,
+    statusChip,
+    statusDot,
+    type TaskLabel,
     type TaskPriority,
     type TaskStatus,
+    type WorkflowStatus,
 } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowLeft,
+    Ban,
     CalendarClock,
     CheckCircle2,
     Circle,
     Clock3,
     Download,
+    Eye,
+    EyeOff,
     FolderKanban,
     Paperclip,
     Pencil,
@@ -33,7 +43,7 @@ import {
     UploadCloud,
     User as UserIcon,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 interface UserMini {
     id: number;
@@ -53,6 +63,8 @@ interface TimeLogItem {
 interface TaskShowProps {
     task: {
         id: number;
+        key_label?: string;
+        number?: number | null;
         title: string;
         description: string | null;
         status: TaskStatus;
@@ -60,24 +72,85 @@ interface TaskShowProps {
         due_date: string | null;
         estimate_minutes: number | null;
         logged_minutes: number;
+        remaining_minutes?: number | null;
+        start_date?: string | null;
+        archived_at?: string | null;
         completed_at: string | null;
         created_at: string;
-        project: { id: number; slug: string; title: string; color: ProjectColor } | null;
+        project: { id: number; slug: string; key?: string; title: string; color: ProjectColor } | null;
         assignee: UserMini | null;
         creator: UserMini | null;
-        subtasks: Array<{ id: number; title: string; status: TaskStatus; completed_at: string | null; due_date: string | null; assignee_id: number | null }>;
-        attachments: Array<{ id: number; file_name: string; file_size: number; mime_type: string | null; created_at: string; uploader: UserMini | null }>;
+        team?: { id: number; name: string; color?: string } | null;
+        type?: { id: number; key: string; name: string; color: string } | null;
+        labels?: TaskLabel[];
+        watchers?: UserMini[];
+        subtasks: Array<{
+            id: number;
+            title: string;
+            status: TaskStatus;
+            completed_at: string | null;
+            due_date: string | null;
+            assignee_id: number | null;
+        }>;
+        attachments: Array<{
+            id: number;
+            file_name: string;
+            file_size: number;
+            mime_type: string | null;
+            created_at: string;
+            uploader: UserMini | null;
+        }>;
         time_logs: TimeLogItem[];
     };
     activities: Array<{ id: number; description: string | null; action: string; created_at: string; user?: UserMini | null }>;
     comments: CommentNode[];
-    canEdit: boolean;
-    canStatus: boolean;
-    canDelete: boolean;
-    canLogTime: boolean;
+    statuses: WorkflowStatus[];
+    allowedTransitions: string[];
+    transitionOptions: Array<{ key: string; name: string; requires_comment: boolean; comment_label: string | null }>;
+    statusHistory: Array<{
+        id: number;
+        from_status: string | null;
+        to_status: string;
+        note: string | null;
+        duration_seconds: number | null;
+        created_at: string;
+        user?: UserMini | null;
+    }>;
+    links: TaskLinkGroups;
+    linkTypes: Array<{ value: string; label: string }>;
+    isBlocked: boolean;
+    isWatching: boolean;
+    can: {
+        edit: boolean;
+        status: boolean;
+        delete: boolean;
+        archive: boolean;
+        logTime: boolean;
+        link: boolean;
+        comment: boolean;
+        attach: boolean;
+    };
 }
 
-export default function TaskShow({ task, activities, comments, canEdit, canStatus, canDelete, canLogTime }: TaskShowProps) {
+export default function TaskShow({
+    task,
+    activities,
+    comments,
+    statuses,
+    allowedTransitions,
+    transitionOptions,
+    statusHistory,
+    links,
+    linkTypes,
+    isBlocked,
+    isWatching,
+    can,
+}: TaskShowProps) {
+    // Keep the previous local names so the rest of the template is untouched.
+    const canEdit = can.edit;
+    const canStatus = can.status;
+    const canDelete = can.delete;
+    const canLogTime = can.logTime;
     const { user } = usePermissions();
     const getInitials = useInitials();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -113,11 +186,12 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
             },
             {
                 preserveScroll: true,
-                onSuccess: () => setLogForm({
-                    minutes: '',
-                    started_at: new Date().toISOString().slice(0, 16),
-                    note: '',
-                }),
+                onSuccess: () =>
+                    setLogForm({
+                        minutes: '',
+                        started_at: new Date().toISOString().slice(0, 16),
+                        note: '',
+                    }),
                 onFinish: () => setLoggingTime(false),
             },
         );
@@ -129,21 +203,65 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
         { title: task.title, href: route('tasks.show', task.id) },
     ];
 
-    const status = TASK_STATUS_META[task.status];
+    const statusIndex = useMemo(() => indexStatuses(statuses ?? []), [statuses]);
+    const status = statusIndex[task.status];
     const priority = TASK_PRIORITY_META[task.priority];
-    const overdue = isOverdue(task.due_date, task.status);
+    // Overdue now follows completion, not a hardcoded status string.
+    const overdue = isOverdue(task.due_date, task.completed_at);
+
+    const doneKey = useMemo(() => (statuses ?? []).find((s) => s.category === 'done')?.key ?? 'completed', [statuses]);
+    const initialKey = useMemo(() => (statuses ?? []).find((s) => s.is_initial)?.key ?? (statuses ?? [])[0]?.key ?? 'todo', [statuses]);
+
+    const [pendingStatus, setPendingStatus] = useState<PendingTransition | null>(null);
+    const [statusSubmitting, setStatusSubmitting] = useState(false);
+    const [statusError, setStatusError] = useState<string | null>(null);
+
+    const submitStatus = (next: TaskStatus, reason?: string) => {
+        setStatusSubmitting(true);
+        router.patch(
+            route('tasks.status', task.id),
+            { status: next, ...(reason ? { reason } : {}) },
+            {
+                preserveScroll: true,
+                onError: (errors) => setStatusError(errors.reason ?? errors.status ?? 'That move was rejected.'),
+                onSuccess: () => {
+                    setPendingStatus(null);
+                    setStatusError(null);
+                },
+                onFinish: () => setStatusSubmitting(false),
+            },
+        );
+    };
 
     const updateStatus = (next: TaskStatus) => {
         if (next === task.status) return;
-        router.patch(route('tasks.status', task.id), { status: next }, { preserveScroll: true });
+
+        // Ask for the reason first when this transition demands one.
+        const option = (transitionOptions ?? []).find((o) => o.key === next);
+
+        if (option?.requires_comment) {
+            setStatusError(null);
+            setPendingStatus({
+                taskId: task.id,
+                status: next,
+                statusName: option.name,
+                label: option.comment_label ?? 'Add a reason for this change.',
+            });
+
+            return;
+        }
+
+        submitStatus(next);
     };
 
     const toggleSubtask = (subId: number) => {
         const sub = task.subtasks.find((s) => s.id === subId);
         if (!sub) return;
-        const nextStatus: TaskStatus = sub.completed_at ? 'todo' : 'completed';
+        const nextStatus: TaskStatus = sub.completed_at ? initialKey : doneKey;
         router.patch(route('tasks.status', subId), { status: nextStatus }, { preserveScroll: true });
     };
+
+    const toggleWatch = () => router.post(route('tasks.watch', task.id), {}, { preserveScroll: true });
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -171,18 +289,26 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={task.title} />
             <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
-                <Link href={route('tasks.index')} className="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-colors">
+                <Link
+                    href={route('tasks.index')}
+                    className="text-muted-foreground hover:text-foreground inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-colors"
+                >
                     <ArrowLeft className="size-3.5" /> Back to tasks
                 </Link>
 
                 <PageHeader
                     eyebrow={
-                        task.project ? (
-                            <Link href={route('projects.show', task.project.slug)} className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors">
-                                <span className={cn('size-1.5 rounded-full', COLOR_DOT[task.project.color] ?? 'bg-violet-500')} />
-                                {task.project.title}
-                            </Link>
-                        ) as unknown as string : 'Task'
+                        task.project
+                            ? ((
+                                  <Link
+                                      href={route('projects.show', task.project.slug)}
+                                      className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
+                                  >
+                                      <span className={cn('size-1.5 rounded-full', COLOR_DOT[task.project.color] ?? 'bg-blue-500')} />
+                                      {task.project.title}
+                                  </Link>
+                              ) as unknown as string)
+                            : 'Task'
                     }
                     title={task.title}
                     description={task.description ?? undefined}
@@ -199,7 +325,7 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-rose-600 ring-rose-200 hover:bg-rose-50 dark:text-rose-400 dark:ring-rose-500/30 hover:ring-rose-300 gap-1.5"
+                                    className="gap-1.5 text-rose-600 ring-rose-200 hover:bg-rose-50 hover:ring-rose-300 dark:text-rose-400 dark:ring-rose-500/30"
                                     onClick={() => setConfirmDeleteTask(true)}
                                 >
                                     <Trash2 className="size-3.5" /> Delete
@@ -214,33 +340,48 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                         <SoftCard>
                             <SoftCardTitle eyebrow="Status">Update status</SoftCardTitle>
                             <SoftCardBody>
-                                <div className="grid gap-2 sm:grid-cols-3">
-                                    {(['todo', 'in_progress', 'completed'] as TaskStatus[]).map((s) => {
-                                        const meta = TASK_STATUS_META[s];
-                                        const active = task.status === s;
+                                {isBlocked && (
+                                    <div className="mb-3 flex items-start gap-2 rounded-xl bg-red-50 p-3 text-xs text-red-700 ring-1 ring-red-200/70 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30">
+                                        <Ban className="mt-0.5 size-4 shrink-0" />
+                                        <span>This task is blocked by an unfinished task. Resolve the blocker before completing it.</span>
+                                    </div>
+                                )}
+                                <div className="flex flex-wrap gap-2">
+                                    {(statuses ?? []).map((s) => {
+                                        const active = task.status === s.key;
+                                        // Only transitions the workflow permits are offered.
+                                        const permitted = active || (allowedTransitions ?? []).includes(s.key);
+
                                         return (
                                             <button
-                                                key={s}
+                                                key={s.key}
                                                 type="button"
-                                                disabled={!canStatus || active}
-                                                onClick={() => updateStatus(s)}
+                                                disabled={!canStatus || active || !permitted}
+                                                title={!permitted && !active ? 'This transition is not allowed by the workflow' : undefined}
+                                                onClick={() => updateStatus(s.key)}
                                                 className={cn(
-                                                    'group relative flex items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300',
+                                                    'inline-flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-semibold ring-1 transition-all ring-inset',
                                                     active
-                                                        ? 'shadow-soft-md bg-gradient-to-br text-white ' + meta.column
-                                                        : 'bg-muted/40 ring-border/60 ring-1 text-muted-foreground hover:text-foreground hover:ring-foreground/20',
-                                                    !canStatus && 'cursor-not-allowed opacity-70',
+                                                        ? statusChip(s.color) + ' ring-2'
+                                                        : 'bg-muted/40 ring-border/60 text-muted-foreground hover:text-foreground hover:ring-foreground/20',
+                                                    (!canStatus || !permitted) && !active && 'cursor-not-allowed opacity-45',
                                                 )}
                                             >
-                                                <span className={cn('size-2 rounded-full', active ? 'bg-white/80' : meta.dot)} />
-                                                {meta.label}
+                                                <span className={cn('size-2 rounded-full', statusDot(s.color))} />
+                                                {s.name}
+                                                {/* A pencil hints that this move will ask for a reason. */}
+                                                {!active && permitted && (transitionOptions ?? []).find((o) => o.key === s.key)?.requires_comment && (
+                                                    <Pencil className="size-3 opacity-60" />
+                                                )}
                                                 {active && <CheckCircle2 className="size-4" />}
                                             </button>
                                         );
                                     })}
                                 </div>
                                 {!canStatus && (
-                                    <p className="text-muted-foreground mt-3 text-[11px]">Only the assignee or a manager can change this task's status.</p>
+                                    <p className="text-muted-foreground mt-3 text-[11px]">
+                                        Only the assignee, the owning team or a manager can change this status.
+                                    </p>
                                 )}
                             </SoftCardBody>
                         </SoftCard>
@@ -249,7 +390,7 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                             <SoftCard>
                                 <SoftCardTitle eyebrow="Brief">Description</SoftCardTitle>
                                 <SoftCardBody>
-                                    <p className="text-sm leading-relaxed whitespace-pre-line">{task.description}</p>
+                                    <RichText value={task.description} />
                                 </SoftCardBody>
                             </SoftCard>
                         )}
@@ -275,7 +416,13 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                         {task.subtasks.map((s) => {
                                             const done = !!s.completed_at;
                                             return (
-                                                <li key={s.id} className={cn('bg-muted/30 ring-border/60 ring-1 flex items-center gap-3 rounded-xl p-3 transition-all', done && 'opacity-70')}>
+                                                <li
+                                                    key={s.id}
+                                                    className={cn(
+                                                        'bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-3 ring-1 transition-all',
+                                                        done && 'opacity-70',
+                                                    )}
+                                                >
                                                     <button
                                                         type="button"
                                                         onClick={() => toggleSubtask(s.id)}
@@ -284,7 +431,7 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                                             'flex size-7 items-center justify-center rounded-lg transition-all',
                                                             done
                                                                 ? 'shadow-soft-sm bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
-                                                                : 'bg-card ring-border ring-1 text-muted-foreground hover:text-foreground',
+                                                                : 'bg-card ring-border text-muted-foreground hover:text-foreground ring-1',
                                                         )}
                                                     >
                                                         {done ? <CheckCircle2 className="size-4" /> : <Circle className="size-4" />}
@@ -308,13 +455,15 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                 eyebrow="Files"
                                 action={
                                     <>
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            className="hidden"
-                                            onChange={handleFile}
-                                        />
-                                        <Button type="button" variant="soft" size="sm" className="gap-1.5" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                                        <input ref={fileInputRef} type="file" className="hidden" onChange={handleFile} />
+                                        <Button
+                                            type="button"
+                                            variant="soft"
+                                            size="sm"
+                                            className="gap-1.5"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploading}
+                                        >
                                             <UploadCloud className="size-3.5" /> {uploading ? 'Uploading…' : 'Upload'}
                                         </Button>
                                     </>
@@ -328,19 +477,20 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                 ) : (
                                     <ul className="space-y-2">
                                         {task.attachments.map((a) => (
-                                            <li key={a.id} className="bg-muted/30 ring-border/60 ring-1 flex items-center gap-3 rounded-xl p-3">
-                                                <div className="from-blue-500 to-indigo-600 flex size-9 items-center justify-center rounded-lg bg-gradient-to-br text-white">
+                                            <li key={a.id} className="bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-3 ring-1">
+                                                <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
                                                     <Paperclip className="size-4" />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <p className="truncate text-sm font-semibold">{a.file_name}</p>
                                                     <p className="text-muted-foreground truncate text-[11px]">
-                                                        {(a.file_size / 1024).toFixed(1)} KB · {a.uploader?.name ?? '—'} · {new Date(a.created_at).toLocaleString()}
+                                                        {(a.file_size / 1024).toFixed(1)} KB · {a.uploader?.name ?? '—'} ·{' '}
+                                                        {new Date(a.created_at).toLocaleString()}
                                                     </p>
                                                 </div>
                                                 <a
                                                     href={route('tasks.attachments.download', { task: task.id, attachment: a.id })}
-                                                    className="text-muted-foreground hover:text-foreground inline-flex size-8 items-center justify-center rounded-lg ring-1 ring-border hover:ring-foreground/30 transition-all"
+                                                    className="text-muted-foreground hover:text-foreground ring-border hover:ring-foreground/30 inline-flex size-8 items-center justify-center rounded-lg ring-1 transition-all"
                                                 >
                                                     <Download className="size-3.5" />
                                                 </a>
@@ -348,7 +498,7 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                                     <button
                                                         type="button"
                                                         onClick={() => setConfirmDeleteAttachmentId(a.id)}
-                                                        className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 inline-flex size-8 items-center justify-center rounded-lg transition-all"
+                                                        className="inline-flex size-8 items-center justify-center rounded-lg text-rose-600 transition-all hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
                                                     >
                                                         <Trash2 className="size-3.5" />
                                                     </button>
@@ -365,7 +515,8 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                 eyebrow="Time"
                                 action={
                                     <span className="text-muted-foreground text-xs font-semibold">
-                                        {formatMinutes(task.logged_minutes)}{task.estimate_minutes ? ` / ${formatMinutes(task.estimate_minutes)}` : ''}
+                                        {formatMinutes(task.logged_minutes)}
+                                        {task.estimate_minutes ? ` / ${formatMinutes(task.estimate_minutes)}` : ''}
                                     </span>
                                 }
                             >
@@ -374,15 +525,17 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                             <SoftCardBody className="space-y-4">
                                 {task.estimate_minutes != null && task.estimate_minutes > 0 && (
                                     <div>
-                                        <div className="bg-muted/40 ring-border/60 ring-1 h-2 overflow-hidden rounded-full">
+                                        <div className="bg-muted/40 ring-border/60 h-2 overflow-hidden rounded-full ring-1">
                                             <div
                                                 className={cn(
                                                     'h-full rounded-full transition-all',
                                                     task.logged_minutes <= task.estimate_minutes
-                                                        ? 'bg-gradient-to-r from-violet-500 to-indigo-600'
+                                                        ? 'bg-gradient-to-r from-blue-500 to-blue-700'
                                                         : 'bg-gradient-to-r from-rose-500 to-orange-600',
                                                 )}
-                                                style={{ width: `${Math.min(100, (task.logged_minutes / Math.max(1, task.estimate_minutes)) * 100)}%` }}
+                                                style={{
+                                                    width: `${Math.min(100, (task.logged_minutes / Math.max(1, task.estimate_minutes)) * 100)}%`,
+                                                }}
                                             />
                                         </div>
                                         {task.logged_minutes > task.estimate_minutes && (
@@ -394,19 +547,22 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                 )}
 
                                 {canLogTime ? (
-                                    <form onSubmit={submitTimeLog} className="bg-muted/30 ring-border/60 ring-1 grid gap-2 rounded-xl p-3 sm:grid-cols-[1fr_1fr_auto]">
+                                    <form
+                                        onSubmit={submitTimeLog}
+                                        className="bg-muted/30 ring-border/60 grid gap-2 rounded-xl p-3 ring-1 sm:grid-cols-[1fr_1fr_auto]"
+                                    >
                                         <input
                                             type="text"
                                             value={logForm.minutes}
                                             onChange={(e) => setLogForm({ ...logForm, minutes: e.target.value })}
                                             placeholder="Duration (e.g. 1h 30m)"
-                                            className="bg-card ring-border/60 hover:ring-foreground/20 focus-visible:ring-violet-200/60 dark:focus-visible:ring-violet-500/20 h-10 rounded-lg px-3 text-sm ring-1 transition-all focus-visible:outline-none focus-visible:ring-4"
+                                            className="bg-card ring-border/60 hover:ring-foreground/20 h-10 rounded-lg px-3 text-sm ring-1 transition-all focus-visible:ring-4 focus-visible:ring-blue-200/60 focus-visible:outline-none dark:focus-visible:ring-blue-500/20"
                                         />
                                         <input
                                             type="datetime-local"
                                             value={logForm.started_at}
                                             onChange={(e) => setLogForm({ ...logForm, started_at: e.target.value })}
-                                            className="bg-card ring-border/60 hover:ring-foreground/20 focus-visible:ring-violet-200/60 dark:focus-visible:ring-violet-500/20 h-10 rounded-lg px-3 text-sm ring-1 transition-all focus-visible:outline-none focus-visible:ring-4"
+                                            className="bg-card ring-border/60 hover:ring-foreground/20 h-10 rounded-lg px-3 text-sm ring-1 transition-all focus-visible:ring-4 focus-visible:ring-blue-200/60 focus-visible:outline-none dark:focus-visible:ring-blue-500/20"
                                         />
                                         <Button type="submit" size="sm" className="h-10 gap-1.5" disabled={loggingTime}>
                                             <Timer className="size-3.5" /> Log
@@ -416,9 +572,11 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                             value={logForm.note}
                                             onChange={(e) => setLogForm({ ...logForm, note: e.target.value })}
                                             placeholder="What did you work on? (optional)"
-                                            className="bg-card ring-border/60 hover:ring-foreground/20 focus-visible:ring-violet-200/60 dark:focus-visible:ring-violet-500/20 h-10 rounded-lg px-3 text-sm ring-1 transition-all focus-visible:outline-none focus-visible:ring-4 sm:col-span-3"
+                                            className="bg-card ring-border/60 hover:ring-foreground/20 h-10 rounded-lg px-3 text-sm ring-1 transition-all focus-visible:ring-4 focus-visible:ring-blue-200/60 focus-visible:outline-none sm:col-span-3 dark:focus-visible:ring-blue-500/20"
                                         />
-                                        {logError && <p className="sm:col-span-3 text-xs font-semibold text-rose-600 dark:text-rose-400">{logError}</p>}
+                                        {logError && (
+                                            <p className="text-xs font-semibold text-rose-600 sm:col-span-3 dark:text-rose-400">{logError}</p>
+                                        )}
                                     </form>
                                 ) : (
                                     <p className="text-muted-foreground text-xs">You don't have permission to log time on this task.</p>
@@ -431,8 +589,8 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                         {task.time_logs.map((log) => {
                                             const canDeleteThis = log.user?.id === user?.id || canEdit;
                                             return (
-                                                <li key={log.id} className="bg-muted/30 ring-border/60 ring-1 flex items-start gap-3 rounded-xl p-3">
-                                                    <div className="from-emerald-500 to-teal-600 flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white">
+                                                <li key={log.id} className="bg-muted/30 ring-border/60 flex items-start gap-3 rounded-xl p-3 ring-1">
+                                                    <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
                                                         <Clock3 className="size-4" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
@@ -448,7 +606,7 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                                         <button
                                                             type="button"
                                                             onClick={() => setConfirmDeleteLogId(log.id)}
-                                                            className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 inline-flex size-7 items-center justify-center rounded-lg transition-all"
+                                                            className="inline-flex size-7 items-center justify-center rounded-lg text-rose-600 transition-all hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
                                                         >
                                                             <Trash2 className="size-3.5" />
                                                         </button>
@@ -478,29 +636,84 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
 
                     <aside className="space-y-4">
                         <SoftCard>
+                            <SoftCardTitle
+                                eyebrow="Relationships"
+                                action={
+                                    <Button size="sm" variant="ghost" onClick={toggleWatch} className="gap-1.5">
+                                        {isWatching ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                                        {isWatching ? 'Unwatch' : 'Watch'}
+                                    </Button>
+                                }
+                            >
+                                Linked tasks
+                            </SoftCardTitle>
+                            <SoftCardBody>
+                                <TaskLinksPanel taskId={task.id} links={links ?? {}} linkTypes={linkTypes ?? []} canLink={can.link} />
+
+                                {(task.watchers?.length ?? 0) > 0 && (
+                                    <div className="border-border/60 mt-4 border-t pt-3">
+                                        <p className="text-muted-foreground mb-2 text-[10px] font-bold tracking-[0.12em] uppercase">
+                                            Watchers ({task.watchers?.length})
+                                        </p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {task.watchers?.map((w) => (
+                                                <span
+                                                    key={w.id}
+                                                    title={w.name}
+                                                    className="ring-card flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[9px] font-bold text-white ring-2"
+                                                >
+                                                    {getInitials(w.name)}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </SoftCardBody>
+                        </SoftCard>
+
+                        <SoftCard>
                             <SoftCardTitle eyebrow="Details">Overview</SoftCardTitle>
                             <SoftCardBody>
                                 <dl className="space-y-3 text-sm">
                                     <Row label="Status">
-                                        <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset', status?.chip)}>
-                                            <span className={cn('size-1.5 rounded-full', status?.dot)} />
-                                            {status?.label}
+                                        <span
+                                            className={cn(
+                                                'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
+                                                statusChip(status?.color),
+                                            )}
+                                        >
+                                            <span className={cn('size-1.5 rounded-full', statusDot(status?.color))} />
+                                            {status?.name ?? task.status}
                                         </span>
                                     </Row>
                                     <Row label="Priority">
-                                        <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset', priority?.chip)}>
+                                        <span
+                                            className={cn(
+                                                'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
+                                                priority?.chip,
+                                            )}
+                                        >
                                             {priority?.label}
                                         </span>
                                     </Row>
                                     <Row label="Due">
-                                        <span className={cn('inline-flex items-center gap-1', overdue && 'text-rose-600 dark:text-rose-400 font-semibold')}>
+                                        <span
+                                            className={cn(
+                                                'inline-flex items-center gap-1',
+                                                overdue && 'font-semibold text-rose-600 dark:text-rose-400',
+                                            )}
+                                        >
                                             <CalendarClock className="size-3.5" /> {relativeDue(task.due_date)}
                                         </span>
                                     </Row>
                                     <Row label="Estimate">
                                         <span className="inline-flex items-center gap-1">
                                             <Timer className="size-3.5" />
-                                            {task.estimate_minutes ? formatMinutes(task.estimate_minutes) : <span className="text-muted-foreground italic">none</span>}
+                                            {task.estimate_minutes ? (
+                                                formatMinutes(task.estimate_minutes)
+                                            ) : (
+                                                <span className="text-muted-foreground italic">none</span>
+                                            )}
                                         </span>
                                     </Row>
                                     <Row label="Logged">
@@ -511,8 +724,11 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                     </Row>
                                     <Row label="Assignee">
                                         {task.assignee ? (
-                                            <Link href={route('users.show', task.assignee.id)} className="inline-flex items-center gap-2 hover:text-violet-600 dark:hover:text-violet-300">
-                                                <span className="from-violet-500 to-indigo-600 ring-card flex size-6 items-center justify-center rounded-full bg-gradient-to-br text-[10px] font-bold text-white ring-2">
+                                            <Link
+                                                href={route('users.show', task.assignee.id)}
+                                                className="inline-flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-300"
+                                            >
+                                                <span className="ring-card flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[10px] font-bold text-white ring-2">
                                                     {getInitials(task.assignee.name)}
                                                 </span>
                                                 <span className="text-sm font-medium">{task.assignee.name}</span>
@@ -523,11 +739,16 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                     </Row>
                                     <Row label="Project">
                                         {task.project ? (
-                                            <Link href={route('projects.show', task.project.slug)} className="inline-flex items-center gap-2 hover:text-violet-600 dark:hover:text-violet-300">
+                                            <Link
+                                                href={route('projects.show', task.project.slug)}
+                                                className="inline-flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-300"
+                                            >
                                                 <FolderKanban className="size-3.5" />
                                                 <span className="text-sm font-medium">{task.project.title}</span>
                                             </Link>
-                                        ) : '—'}
+                                        ) : (
+                                            '—'
+                                        )}
                                     </Row>
                                     <Row label="Created by">
                                         {task.creator ? (
@@ -535,7 +756,9 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                                                 <UserIcon className="size-3.5" />
                                                 <span className="text-sm">{task.creator.name}</span>
                                             </span>
-                                        ) : '—'}
+                                        ) : (
+                                            '—'
+                                        )}
                                     </Row>
                                     <Row label="Created">{new Date(task.created_at).toLocaleDateString()}</Row>
                                 </dl>
@@ -543,19 +766,71 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                         </SoftCard>
 
                         <SoftCard>
+                            <SoftCardTitle eyebrow="Trail">Status history</SoftCardTitle>
+                            <SoftCardBody>
+                                {(statusHistory ?? []).length === 0 ? (
+                                    <p className="text-muted-foreground text-xs">No status changes yet.</p>
+                                ) : (
+                                    <ol className="space-y-2.5">
+                                        {statusHistory.map((h) => {
+                                            const to = statusIndex[h.to_status];
+                                            const from = h.from_status ? statusIndex[h.from_status] : null;
+
+                                            return (
+                                                <li key={h.id} className="text-xs">
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                        {from && (
+                                                            <>
+                                                                <span className="text-muted-foreground">{from.name}</span>
+                                                                <span className="text-muted-foreground">→</span>
+                                                            </>
+                                                        )}
+                                                        <span
+                                                            className={cn(
+                                                                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-semibold ring-1 ring-inset',
+                                                                statusChip(to?.color),
+                                                            )}
+                                                        >
+                                                            <span className={cn('size-1.5 rounded-full', statusDot(to?.color))} />
+                                                            {to?.name ?? h.to_status}
+                                                        </span>
+                                                        {h.duration_seconds != null && h.duration_seconds > 0 && (
+                                                            <span className="text-muted-foreground">after {formatDuration(h.duration_seconds)}</span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* The QA verdict, block reason or reopen justification. */}
+                                                    {h.note && (
+                                                        <p className="bg-muted/50 ring-border/60 mt-1 rounded-lg px-2.5 py-1.5 leading-relaxed whitespace-pre-line ring-1">
+                                                            {h.note}
+                                                        </p>
+                                                    )}
+
+                                                    <p className="text-muted-foreground mt-0.5 text-[10px]">
+                                                        {h.user?.name ?? 'System'} · {new Date(h.created_at).toLocaleString()}
+                                                    </p>
+                                                </li>
+                                            );
+                                        })}
+                                    </ol>
+                                )}
+                            </SoftCardBody>
+                        </SoftCard>
+
+                        <SoftCard>
                             <SoftCardTitle eyebrow="Timeline">Activity</SoftCardTitle>
                             <SoftCardBody>
-                                <ol className="relative space-y-4 pl-6 before:absolute before:bottom-1.5 before:left-2 before:top-1.5 before:w-px before:bg-border">
+                                <ol className="before:bg-border relative space-y-4 pl-6 before:absolute before:top-1.5 before:bottom-1.5 before:left-2 before:w-px">
                                     {activities.length === 0 && <p className="text-muted-foreground text-xs">No activity yet.</p>}
                                     {activities.map((a, i) => (
                                         <li key={a.id} className="relative">
                                             <span
                                                 className={cn(
-                                                    'shadow-soft-xs ring-card absolute -left-6 top-0.5 size-3 rounded-full ring-2',
-                                                    i % 4 === 0 && 'bg-gradient-to-br from-violet-500 to-indigo-600',
+                                                    'shadow-soft-xs ring-card absolute top-0.5 -left-6 size-3 rounded-full ring-2',
+                                                    i % 4 === 0 && 'bg-gradient-to-br from-blue-500 to-blue-700',
                                                     i % 4 === 1 && 'bg-gradient-to-br from-emerald-500 to-teal-600',
                                                     i % 4 === 2 && 'bg-gradient-to-br from-amber-500 to-orange-600',
-                                                    i % 4 === 3 && 'bg-gradient-to-br from-pink-500 to-fuchsia-600',
+                                                    i % 4 === 3 && 'bg-gradient-to-br from-slate-500 to-slate-700',
                                                 )}
                                             />
                                             <p className="text-sm">{a.description ?? a.action}</p>
@@ -595,7 +870,9 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                 icon={Trash2}
                 onConfirm={() => {
                     if (confirmDeleteAttachmentId !== null) {
-                        router.delete(route('tasks.attachments.destroy', { task: task.id, attachment: confirmDeleteAttachmentId }), { preserveScroll: true });
+                        router.delete(route('tasks.attachments.destroy', { task: task.id, attachment: confirmDeleteAttachmentId }), {
+                            preserveScroll: true,
+                        });
                     }
                     setConfirmDeleteAttachmentId(null);
                 }}
@@ -615,6 +892,16 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
                     setConfirmDeleteLogId(null);
                 }}
             />
+
+            <StatusReasonDialog
+                pending={pendingStatus}
+                submitting={statusSubmitting}
+                error={statusError}
+                onCancel={() => setPendingStatus(null)}
+                onConfirm={(reason) => {
+                    if (pendingStatus) submitStatus(pendingStatus.status, reason);
+                }}
+            />
         </AppLayout>
     );
 }
@@ -622,7 +909,7 @@ export default function TaskShow({ task, activities, comments, canEdit, canStatu
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="flex items-center justify-between gap-3">
-            <dt className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">{label}</dt>
+            <dt className="text-muted-foreground text-[10px] font-bold tracking-[0.14em] uppercase">{label}</dt>
             <dd className="text-right">{children}</dd>
         </div>
     );
@@ -649,4 +936,13 @@ function parseHm(input: string): number | null {
         return Math.round(asNumber * 60);
     }
     return null;
+}
+
+function formatDuration(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = minutes / 60;
+    if (hours < 24) return `${hours.toFixed(1)}h`;
+    return `${(hours / 24).toFixed(1)}d`;
 }

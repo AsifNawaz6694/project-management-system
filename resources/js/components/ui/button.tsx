@@ -10,15 +10,15 @@ const buttonVariants = cva(
         variants: {
             variant: {
                 default:
-                    'bg-gradient-to-br from-violet-600 via-indigo-600 to-blue-600 text-white shadow-soft-md hover:shadow-glow hover:brightness-[1.05]',
+                    'bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-soft-md hover:shadow-glow hover:brightness-[1.05]',
                 secondary:
                     'bg-card text-foreground shadow-soft-sm ring-1 ring-border hover:ring-foreground/30 hover:shadow-soft-md',
                 outline:
                     'bg-card/60 text-foreground ring-1 ring-border backdrop-blur hover:bg-card hover:ring-foreground/30 hover:shadow-soft-sm',
                 ghost: 'text-foreground hover:bg-accent/70',
                 destructive:
-                    'bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-soft-md hover:brightness-110',
-                soft: 'bg-violet-50 text-violet-700 ring-1 ring-violet-100 hover:bg-violet-100 dark:bg-violet-500/10 dark:text-violet-200 dark:ring-violet-500/20',
+                    'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-soft-md hover:brightness-110',
+                soft: 'bg-blue-50 text-blue-700 ring-1 ring-blue-100 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-500/20',
                 link: 'text-primary underline-offset-4 hover:underline',
             },
             size: {

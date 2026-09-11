@@ -16,14 +16,22 @@ class TaskAttachmentController extends Controller
 
     public function store(Request $request, Task $task): RedirectResponse
     {
+        $this->authorize('attach', $task);
+
         $user = $request->user();
-        if (! Task::visibleTo($user)->whereKey($task->id)->exists()) {
-            abort(403);
-        }
 
         $request->validate([
             'file' => ['required', 'file', 'max:20480'],
+            // Block executable and script uploads outright.
+            'file.*' => ['nullable'],
         ]);
+
+        $extension = strtolower((string) $request->file('file')->getClientOriginalExtension());
+        abort_if(
+            in_array($extension, ['php', 'phtml', 'exe', 'sh', 'bat', 'cmd', 'com', 'js', 'jar', 'msi'], true),
+            422,
+            'That file type is not allowed.',
+        );
 
         $this->tasks->attachFile($task, $request->file('file'), $user);
 
@@ -32,13 +40,11 @@ class TaskAttachmentController extends Controller
 
     public function download(Request $request, Task $task, TaskAttachment $attachment): StreamedResponse
     {
-        $user = $request->user();
         if ($attachment->task_id !== $task->id) {
             abort(404);
         }
-        if (! Task::visibleTo($user)->whereKey($task->id)->exists()) {
-            abort(403);
-        }
+
+        $this->authorize('view', $task);
 
         return $this->tasks->downloadAttachment($attachment);
     }

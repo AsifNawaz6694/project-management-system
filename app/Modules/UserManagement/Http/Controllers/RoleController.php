@@ -120,7 +120,7 @@ class RoleController extends Controller
             'properties' => ['role_id' => $role->id, 'role' => $role->slug, 'original' => $original],
         ]);
 
-        return back()->with('status', "Role updated.");
+        return back()->with('status', 'Role updated.');
     }
 
     public function destroy(Request $request, Role $role): RedirectResponse

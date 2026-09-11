@@ -1,3 +1,4 @@
+import { NotificationRowLink } from '@/components/notification-row-link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
@@ -7,12 +8,11 @@ import {
     AtSign,
     Bell,
     CalendarClock,
-    CheckCircle2,
     CheckCheck,
+    CheckCircle2,
     FolderKanban,
     ListChecks,
     Sparkles,
-    Trash2,
     Wallet,
     XCircle,
     type LucideIcon,
@@ -29,6 +29,7 @@ interface NotificationItem {
     tone: string;
     link: string | null;
     read_at: string | null;
+    event_count?: number;
     created_at: string;
     actor: { id: number; name: string; avatar?: string | null } | null;
 }
@@ -40,22 +41,22 @@ interface DropdownPayload {
 
 const ICONS: Record<string, LucideIcon> = {
     'list-checks': ListChecks,
-    'wallet': Wallet,
+    wallet: Wallet,
     'check-circle-2': CheckCircle2,
     'x-circle': XCircle,
     'at-sign': AtSign,
     'folder-kanban': FolderKanban,
     'calendar-clock': CalendarClock,
-    'sparkles': Sparkles,
+    sparkles: Sparkles,
 };
 
 const TONES: Record<string, string> = {
-    violet: 'from-violet-500 to-indigo-600',
-    blue: 'from-blue-500 to-cyan-600',
-    emerald: 'from-emerald-500 to-teal-600',
-    amber: 'from-amber-400 to-orange-500',
-    rose: 'from-rose-500 to-pink-600',
-    pink: 'from-pink-500 to-fuchsia-600',
+    violet: 'from-indigo-500 to-indigo-700',
+    blue: 'from-blue-500 to-blue-700',
+    emerald: 'from-emerald-500 to-emerald-700',
+    amber: 'from-amber-500 to-amber-600',
+    rose: 'from-red-500 to-red-700',
+    pink: 'from-pink-400 to-pink-600',
     slate: 'from-slate-500 to-slate-700',
 };
 
@@ -110,26 +111,34 @@ export function NotificationBell() {
     }, [items]);
 
     const markAll = () => {
-        router.patch(route('notifications.read-all'), {}, {
-            preserveScroll: true,
-            preserveState: true,
-            onSuccess: () => {
-                setUnread(0);
-                setItems((prev) => prev.map((i) => ({ ...i, read_at: i.read_at ?? new Date().toISOString() })));
+        router.patch(
+            route('notifications.read-all'),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setUnread(0);
+                    setItems((prev) => prev.map((i) => ({ ...i, read_at: i.read_at ?? new Date().toISOString() })));
+                },
             },
-        });
+        );
     };
 
     const onItemClick = (item: NotificationItem) => {
         if (!item.read_at) {
-            router.patch(route('notifications.read', item.id), {}, {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, read_at: new Date().toISOString() } : i)));
-                    setUnread((u) => Math.max(0, u - 1));
+            router.patch(
+                route('notifications.read', item.id),
+                {},
+                {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => {
+                        setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, read_at: new Date().toISOString() } : i)));
+                        setUnread((u) => Math.max(0, u - 1));
+                    },
                 },
-            });
+            );
         }
         setOpen(false);
     };
@@ -139,22 +148,25 @@ export function NotificationBell() {
             <DropdownMenuTrigger asChild>
                 <button
                     type="button"
-                    className="bg-card ring-border/70 shadow-soft-xs hover:shadow-soft-sm hover:ring-foreground/20 relative inline-flex size-10 items-center justify-center rounded-xl ring-1 transition-all"
+                    className="bg-card ring-border/70 shadow-soft-xs hover:shadow-soft-sm hover:ring-foreground/20 relative inline-flex size-9 shrink-0 items-center justify-center rounded-xl ring-1 transition-all sm:size-10"
                     aria-label="Notifications"
                 >
                     <Bell className="size-4" />
                     {unread > 0 && (
                         <span
                             key={unread}
-                            className="ring-card from-rose-500 to-pink-600 absolute -right-1 -top-1 inline-flex h-5 min-w-5 animate-[fade-in-up_0.25s_ease-out] items-center justify-center rounded-full bg-gradient-to-br px-1 text-[10px] font-bold text-white ring-2"
+                            className="ring-card absolute -top-1 -right-1 inline-flex h-5 min-w-5 animate-[fade-in-up_0.25s_ease-out] items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 px-1 text-[10px] font-bold text-white ring-2"
                         >
                             {unread > 99 ? '99+' : unread}
                         </span>
                     )}
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[380px] rounded-2xl border-border/60 shadow-soft-lg p-0">
-                <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+            <DropdownMenuContent
+                align="end"
+                className="border-border/60 shadow-soft-lg w-[calc(100vw-1.5rem)] max-w-[380px] rounded-2xl p-0 sm:w-[380px]"
+            >
+                <div className="border-border/60 flex items-center justify-between border-b px-4 py-3">
                     <div>
                         <p className="font-display text-sm font-bold tracking-tight">Notifications</p>
                         <p className="text-muted-foreground text-[11px]">{unread} unread</p>
@@ -178,7 +190,7 @@ export function NotificationBell() {
                         </div>
                     ) : items.length === 0 ? (
                         <div className="p-10 text-center">
-                            <div className="from-violet-500 to-indigo-600 mx-auto flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-soft-md">
+                            <div className="shadow-soft-md mx-auto flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
                                 <Bell className="size-5" />
                             </div>
                             <p className="font-display mt-3 text-sm font-bold">All caught up</p>
@@ -186,44 +198,59 @@ export function NotificationBell() {
                         </div>
                     ) : (
                         grouped.map(([group, groupItems]) => (
-                            <div key={group} className="border-b border-border/40 last:border-b-0">
-                                <p className="text-muted-foreground bg-muted/30 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em]">{group}</p>
-                                <ul className="divide-y divide-border/40">
+                            <div key={group} className="border-border/40 border-b last:border-b-0">
+                                <p className="text-muted-foreground bg-muted/30 px-4 py-1.5 text-[10px] font-bold tracking-[0.16em] uppercase">
+                                    {group}
+                                </p>
+                                <ul className="divide-border/40 divide-y">
                                     {groupItems.map((item) => {
                                         const Icon = ICONS[item.icon ?? ''] ?? Sparkles;
                                         const tone = TONES[item.tone] ?? TONES.violet;
-                                        const Wrap = item.link ? Link : 'div';
-                                        const props = item.link ? { href: item.link } : {};
                                         return (
                                             <li
                                                 key={item.id}
                                                 className={cn(
                                                     'group/item relative animate-[fade-in-up_0.3s_ease-out] transition-colors',
-                                                    !item.read_at && 'bg-violet-50/40 dark:bg-violet-500/[0.04]',
+                                                    !item.read_at && 'bg-blue-50/40 dark:bg-blue-500/[0.04]',
                                                 )}
                                             >
-                                                <Wrap
-                                                    {...(props as Record<string, string>)}
+                                                <NotificationRowLink
+                                                    href={item.link}
                                                     onClick={() => onItemClick(item)}
                                                     className="hover:bg-muted/40 flex items-start gap-3 px-4 py-3 transition-colors"
                                                 >
-                                                    <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-soft-xs', tone)}>
+                                                    <div
+                                                        className={cn(
+                                                            'shadow-soft-xs flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white',
+                                                            tone,
+                                                        )}
+                                                    >
                                                         <Icon className="size-4" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="line-clamp-1 text-sm font-semibold">{item.title}</p>
-                                                        {item.body && <p className="text-muted-foreground line-clamp-2 mt-0.5 text-[11px]">{item.body}</p>}
+                                                        <p className="line-clamp-1 text-sm font-semibold">
+                                                            {item.title}
+                                                            {/* Repeated events collapse into one row. */}
+                                                            {(item.event_count ?? 1) > 1 && (
+                                                                <span className="bg-primary/10 text-primary ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums">
+                                                                    ×{item.event_count}
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                        {item.body && (
+                                                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px]">{item.body}</p>
+                                                        )}
                                                         <p className="text-muted-foreground mt-1 inline-flex items-center gap-1.5 text-[10px]">
                                                             {item.actor && (
-                                                                <span className="from-violet-500 to-indigo-600 ring-card flex size-4 items-center justify-center rounded-full bg-gradient-to-br text-[8px] font-bold text-white ring-2">
+                                                                <span className="ring-card flex size-4 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[8px] font-bold text-white ring-2">
                                                                     {getInitials(item.actor.name)}
                                                                 </span>
                                                             )}
                                                             {relativeTime(item.created_at)}
                                                         </p>
                                                     </div>
-                                                    {!item.read_at && <span className="bg-violet-500 mt-1.5 size-2 shrink-0 rounded-full" />}
-                                                </Wrap>
+                                                    {!item.read_at && <span className="mt-1.5 size-2 shrink-0 rounded-full bg-blue-500" />}
+                                                </NotificationRowLink>
                                             </li>
                                         );
                                     })}
@@ -232,8 +259,12 @@ export function NotificationBell() {
                         ))
                     )}
                 </div>
-                <div className="border-t border-border/60 p-2">
-                    <Link href={route('notifications.index')} className="text-muted-foreground hover:text-foreground hover:bg-muted/60 block rounded-lg px-3 py-2 text-center text-[12px] font-semibold transition-colors" onClick={() => setOpen(false)}>
+                <div className="border-border/60 border-t p-2">
+                    <Link
+                        href={route('notifications.index')}
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted/60 block rounded-lg px-3 py-2 text-center text-[12px] font-semibold transition-colors"
+                        onClick={() => setOpen(false)}
+                    >
                         View all notifications →
                     </Link>
                 </div>

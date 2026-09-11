@@ -16,10 +16,9 @@ interface ProjectsCreateProps {
     statuses: string[];
     priorities: string[];
     colors: string[];
-    currencies: string[];
 }
 
-export default function ProjectsCreate({ users, statuses, priorities, colors, currencies }: ProjectsCreateProps) {
+export default function ProjectsCreate({ users, statuses, priorities, colors }: ProjectsCreateProps) {
     const { user } = usePermissions();
 
     return (
@@ -40,8 +39,6 @@ export default function ProjectsCreate({ users, statuses, priorities, colors, cu
                         color: 'violet',
                         start_date: '',
                         end_date: '',
-                        budget: '',
-                        currency: 'SAR',
                         progress: 0,
                         owner_id: user?.id ?? null,
                         member_ids: user?.id ? [user.id] : [],
@@ -51,7 +48,6 @@ export default function ProjectsCreate({ users, statuses, priorities, colors, cu
                     statuses={statuses}
                     priorities={priorities}
                     colors={colors}
-                    currencies={currencies}
                     submitUrl={route('projects.store')}
                     submitMethod="post"
                     submitLabel="Create project"

@@ -1,5 +1,11 @@
 <?php
 
+use App\Modules\Automation\Services\AutomationEngine;
+use App\Modules\UserManagement\Services\ProjectPermissionResolver;
+use App\Modules\Workflow\Services\WorkflowService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,8 +17,15 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        // Both services memoise in statics that outlive a rolled-back database,
+        // so a stale entry would leak IDs from the previous test.
+        WorkflowService::flushCache();
+        ProjectPermissionResolver::flushCache();
+        AutomationEngine::reset();
+    })
     ->in('Feature');
 
 /*

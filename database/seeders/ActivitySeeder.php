@@ -10,9 +10,9 @@ class ActivitySeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('email', 'admin@raqtan.com')->first();
-        $manager = User::where('email', 'manager@raqtan.com')->first();
-        $employee = User::where('email', 'employee@raqtan.com')->first();
+        $admin = User::where('email', 'asif@bargoventures.com')->first();
+        $manager = User::where('email', 'saad@bargoventures.com')->first();
+        $employee = User::where('email', 'yousuf@bargoventures.com')->first();
 
         if (! $admin || ! $manager || ! $employee) {
             return;

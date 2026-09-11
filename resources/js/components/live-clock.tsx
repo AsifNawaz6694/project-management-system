@@ -15,8 +15,8 @@ export function LiveClock({ className }: { className?: string }) {
 
     return (
         <div className={className}>
-            <p className="font-display text-2xl font-bold tabular-nums tracking-tight">{time}</p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-80">{date}</p>
+            <p className="font-display text-2xl font-bold tracking-tight tabular-nums">{time}</p>
+            <p className="text-[11px] font-semibold tracking-[0.18em] uppercase opacity-80">{date}</p>
         </div>
     );
 }

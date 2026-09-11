@@ -19,21 +19,19 @@ interface AreaChartProps {
 }
 
 const TONE_COLOR: Record<string, string> = {
-    violet: '#7c3aed',
-    blue: '#3b82f6',
-    emerald: '#10b981',
-    amber: '#f59e0b',
-    rose: '#f43f5e',
-    pink: '#ec4899',
+    violet: '#4a3aa7',
+    blue: '#2a78d6',
+    emerald: '#1baf7a',
+    amber: '#eda100',
+    rose: '#e34948',
+    pink: '#e87ba4',
+    sky: '#5598e7',
+    slate: '#64748b',
 };
 
 export function AreaChart({ points, series, height = 180, className }: AreaChartProps) {
     if (points.length === 0) {
-        return (
-            <div className={cn('text-muted-foreground flex h-44 items-center justify-center text-xs', className)}>
-                No data yet
-            </div>
-        );
+        return <div className={cn('text-muted-foreground flex h-44 items-center justify-center text-xs', className)}>No data yet</div>;
     }
 
     const width = 600;
@@ -55,8 +53,8 @@ export function AreaChart({ points, series, height = 180, className }: AreaChart
             <defs>
                 {series.map((s) => (
                     <linearGradient key={s.key} id={`grad-${s.key}`} x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0%" stopColor={TONE_COLOR[s.tone] ?? '#7c3aed'} stopOpacity="0.35" />
-                        <stop offset="100%" stopColor={TONE_COLOR[s.tone] ?? '#7c3aed'} stopOpacity="0" />
+                        <stop offset="0%" stopColor={TONE_COLOR[s.tone] ?? '#2a78d6'} stopOpacity="0.35" />
+                        <stop offset="100%" stopColor={TONE_COLOR[s.tone] ?? '#2a78d6'} stopOpacity="0" />
                     </linearGradient>
                 ))}
             </defs>
@@ -71,11 +69,7 @@ export function AreaChart({ points, series, height = 180, className }: AreaChart
 
             {series.map((s, sIdx) => {
                 const linePoints = points.map((p, i) => `${xFor(i)},${yFor(Number(p[s.key] ?? 0))}`);
-                const areaPoints = [
-                    `${xFor(0)},${padding.top + innerH}`,
-                    ...linePoints,
-                    `${xFor(points.length - 1)},${padding.top + innerH}`,
-                ];
+                const areaPoints = [`${xFor(0)},${padding.top + innerH}`, ...linePoints, `${xFor(points.length - 1)},${padding.top + innerH}`];
                 const lineLength = innerW + innerH; // generous estimate
                 return (
                     <g key={s.key}>
@@ -91,7 +85,7 @@ export function AreaChart({ points, series, height = 180, className }: AreaChart
                         <polyline
                             points={linePoints.join(' ')}
                             fill="none"
-                            stroke={TONE_COLOR[s.tone] ?? '#7c3aed'}
+                            stroke={TONE_COLOR[s.tone] ?? '#2a78d6'}
                             strokeWidth={2}
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -109,7 +103,7 @@ export function AreaChart({ points, series, height = 180, className }: AreaChart
                                 cx={xFor(i)}
                                 cy={yFor(Number(p[s.key] ?? 0))}
                                 r={2.5}
-                                fill={TONE_COLOR[s.tone] ?? '#7c3aed'}
+                                fill={TONE_COLOR[s.tone] ?? '#2a78d6'}
                                 style={{
                                     opacity: 0,
                                     animation: `pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards`,

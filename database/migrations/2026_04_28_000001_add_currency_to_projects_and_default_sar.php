@@ -8,23 +8,33 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->string('currency', 8)->default('SAR')->after('budget');
-        });
+        if (! Schema::hasColumn('projects', 'currency')) {
+            Schema::table('projects', function (Blueprint $table) {
+                $table->string('currency', 8)->default('SAR')->after('budget');
+            });
+        }
 
-        Schema::table('expenses', function (Blueprint $table) {
-            $table->string('currency', 8)->default('SAR')->change();
-        });
+        // Guarded: the expenses table is dropped by a later migration, so this
+        // is a no-op on any database migrated past that point.
+        if (Schema::hasTable('expenses')) {
+            Schema::table('expenses', function (Blueprint $table) {
+                $table->string('currency', 8)->default('SAR')->change();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('projects', function (Blueprint $table) {
-            $table->dropColumn('currency');
-        });
+        if (Schema::hasColumn('projects', 'currency')) {
+            Schema::table('projects', function (Blueprint $table) {
+                $table->dropColumn('currency');
+            });
+        }
 
-        Schema::table('expenses', function (Blueprint $table) {
-            $table->string('currency', 8)->default('USD')->change();
-        });
+        if (Schema::hasTable('expenses')) {
+            Schema::table('expenses', function (Blueprint $table) {
+                $table->string('currency', 8)->default('USD')->change();
+            });
+        }
     }
 };

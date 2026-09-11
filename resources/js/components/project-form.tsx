@@ -5,15 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useInitials } from '@/hooks/use-initials';
-import {
-    COLOR_GRADIENT,
-    PRIORITY_META,
-    STATUS_META,
-    type ProjectColor,
-    type ProjectPriority,
-    type ProjectStatus,
-} from '@/lib/projects';
-import { CURRENCY_META, SUPPORTED_CURRENCIES } from '@/lib/currency';
+import { COLOR_GRADIENT, PRIORITY_META, STATUS_META, type ProjectColor, type ProjectPriority, type ProjectStatus } from '@/lib/projects';
 import { cn } from '@/lib/utils';
 import { Link, useForm } from '@inertiajs/react';
 import { Calendar, Check, CheckCircle2, Circle, LoaderCircle, Plus, Trash2 } from 'lucide-react';
@@ -30,14 +22,14 @@ export interface AssignableUser {
     primary_role?: string | null;
 }
 
-export interface MilestoneInput {
+export type MilestoneInput = {
     title: string;
     description: string;
     due_date: string;
     completed: boolean;
-}
+};
 
-export interface ProjectFormState {
+export type ProjectFormState = {
     title: string;
     description: string;
     status: ProjectStatus;
@@ -45,13 +37,11 @@ export interface ProjectFormState {
     color: ProjectColor;
     start_date: string;
     end_date: string;
-    budget: string;
-    currency: string;
     progress: number;
     owner_id: number | null;
     member_ids: number[];
     milestones: MilestoneInput[];
-}
+};
 
 interface ProjectFormProps {
     initial: ProjectFormState;
@@ -59,15 +49,13 @@ interface ProjectFormProps {
     statuses: string[];
     priorities: string[];
     colors: string[];
-    currencies?: string[];
     submitUrl: string;
     submitMethod: 'post' | 'patch';
     submitLabel: string;
     cancelUrl: string;
 }
 
-export function ProjectForm({ initial, users, statuses, priorities, colors, currencies, submitUrl, submitMethod, submitLabel, cancelUrl }: ProjectFormProps) {
-    const currencyList = (currencies && currencies.length > 0 ? currencies : SUPPORTED_CURRENCIES) as string[];
+export function ProjectForm({ initial, users, statuses, priorities, colors, submitUrl, submitMethod, submitLabel, cancelUrl }: ProjectFormProps) {
     const getInitials = useInitials();
     const { data, setData, post, patch, processing, errors } = useForm<ProjectFormState>({ ...initial });
 
@@ -105,14 +93,20 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                 <SoftCardTitle eyebrow="Project">Basics</SoftCardTitle>
                 <SoftCardBody className="grid gap-4 md:grid-cols-2">
                     <Field label="Title" error={errors.title} className="md:col-span-2">
-                        <Input value={data.title} onChange={(e) => setData('title', e.target.value)} required autoFocus placeholder="e.g. Mobile App Redesign" />
+                        <Input
+                            value={data.title}
+                            onChange={(e) => setData('title', e.target.value)}
+                            required
+                            autoFocus
+                            placeholder="e.g. Mobile App Redesign"
+                        />
                     </Field>
                     <Field label="Description" error={errors.description} className="md:col-span-2">
                         <textarea
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                             rows={3}
-                            className="bg-card shadow-soft-xs ring-border focus-visible:border-foreground/30 focus-visible:ring-violet-200/60 dark:focus-visible:ring-violet-500/20 hover:border-foreground/20 ring-1 w-full rounded-xl px-3.5 py-2.5 text-sm transition-all focus-visible:outline-none focus-visible:ring-4"
+                            className="bg-card shadow-soft-xs ring-border focus-visible:border-foreground/30 hover:border-foreground/20 w-full rounded-xl px-3.5 py-2.5 text-sm ring-1 transition-all focus-visible:ring-4 focus-visible:ring-blue-200/60 focus-visible:outline-none dark:focus-visible:ring-blue-500/20"
                             placeholder="What does this project deliver, who is it for, and how will success be measured?"
                         />
                     </Field>
@@ -153,29 +147,6 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                         <Input type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} />
                     </Field>
 
-                    <Field label="Budget" error={errors.budget}>
-                        <div className="flex gap-2">
-                            <Select value={data.currency} onValueChange={(v) => setData('currency', v)}>
-                                <SelectTrigger className="h-11 w-[120px] rounded-xl"><SelectValue /></SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    {currencyList.map((c) => (
-                                        <SelectItem key={c} value={c}>
-                                            {c} · {CURRENCY_META[c as keyof typeof CURRENCY_META]?.label ?? c}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={data.budget}
-                                onChange={(e) => setData('budget', e.target.value)}
-                                placeholder="50000"
-                                className="flex-1"
-                            />
-                        </div>
-                    </Field>
                     <Field label="Progress %" error={errors.progress}>
                         <Input
                             type="number"
@@ -196,7 +167,7 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                                     className={cn(
                                         'group/swatch relative size-10 overflow-hidden rounded-xl bg-gradient-to-br transition-all',
                                         COLOR_GRADIENT[c as ProjectColor],
-                                        data.color === c ? 'shadow-glow ring-foreground ring-2 scale-110' : 'ring-border ring-1 hover:scale-105',
+                                        data.color === c ? 'shadow-glow ring-foreground scale-110 ring-2' : 'ring-border ring-1 hover:scale-105',
                                     )}
                                     aria-label={c}
                                 >
@@ -210,14 +181,13 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
 
             <SoftCard>
                 <SoftCardTitle eyebrow="Team">
-                    {data.member_ids.length === 0 ? 'Assign members' : `${data.member_ids.length} member${data.member_ids.length === 1 ? '' : 's'} assigned`}
+                    {data.member_ids.length === 0
+                        ? 'Assign members'
+                        : `${data.member_ids.length} member${data.member_ids.length === 1 ? '' : 's'} assigned`}
                 </SoftCardTitle>
                 <SoftCardBody>
-                    <Label className="text-muted-foreground mb-2 block text-[10px] font-bold uppercase tracking-[0.14em]">Project owner</Label>
-                    <Select
-                        value={data.owner_id ? String(data.owner_id) : ''}
-                        onValueChange={(v) => setData('owner_id', v ? Number(v) : null)}
-                    >
+                    <Label className="text-muted-foreground mb-2 block text-[10px] font-bold tracking-[0.14em] uppercase">Project owner</Label>
+                    <Select value={data.owner_id ? String(data.owner_id) : ''} onValueChange={(v) => setData('owner_id', v ? Number(v) : null)}>
                         <SelectTrigger className="h-11 rounded-xl">
                             <SelectValue placeholder="Choose an owner (manager or admin)" />
                         </SelectTrigger>
@@ -233,7 +203,7 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                     </Select>
                     <InputError message={errors.owner_id} className="mt-1" />
 
-                    <Label className="text-muted-foreground mb-2 mt-5 block text-[10px] font-bold uppercase tracking-[0.14em]">Members</Label>
+                    <Label className="text-muted-foreground mt-5 mb-2 block text-[10px] font-bold tracking-[0.14em] uppercase">Members</Label>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         {users.map((u) => {
                             const checked = data.member_ids.includes(u.id);
@@ -245,11 +215,11 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                                     className={cn(
                                         'group flex items-center gap-3 rounded-xl p-3 text-left ring-1 transition-all',
                                         checked
-                                            ? 'shadow-soft-sm bg-gradient-to-br from-violet-50 to-indigo-50 ring-violet-300 dark:from-violet-500/10 dark:to-indigo-500/10 dark:ring-violet-500/30'
+                                            ? 'shadow-soft-sm bg-gradient-to-br from-blue-50 to-blue-100 ring-blue-300 dark:from-blue-500/10 dark:to-blue-500/15 dark:ring-blue-500/30'
                                             : 'bg-muted/30 ring-border/60 hover:ring-foreground/20',
                                     )}
                                 >
-                                    <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white shadow-soft-xs ring-2 ring-card">
+                                    <div className="shadow-soft-xs ring-card flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-xs font-bold text-white ring-2">
                                         {u.initials || getInitials(u.name)}
                                     </div>
                                     <div className="min-w-0 flex-1">
@@ -259,7 +229,7 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                                     <div
                                         className={cn(
                                             'flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
-                                            checked ? 'border-violet-600 bg-gradient-to-br from-violet-600 to-indigo-600' : 'border-muted-foreground/30',
+                                            checked ? 'border-blue-600 bg-gradient-to-br from-blue-600 to-blue-700' : 'border-muted-foreground/30',
                                         )}
                                     >
                                         {checked && <Check className="size-3 text-white" />}
@@ -285,7 +255,7 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                 </SoftCardTitle>
                 <SoftCardBody>
                     {data.milestones.length === 0 ? (
-                        <div className="bg-muted/40 ring-border/60 ring-1 rounded-xl p-8 text-center">
+                        <div className="bg-muted/40 ring-border/60 rounded-xl p-8 text-center ring-1">
                             <Calendar className="text-muted-foreground mx-auto size-5" />
                             <p className="mt-2 text-sm font-semibold">No milestones yet</p>
                             <p className="text-muted-foreground mt-1 text-xs">Break the project into checkpoints to track progress.</p>
@@ -293,7 +263,10 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                     ) : (
                         <div className="space-y-3">
                             {data.milestones.map((m, i) => (
-                                <div key={i} className="bg-muted/30 ring-border/60 ring-1 grid gap-3 rounded-2xl p-4 md:grid-cols-[auto_1fr_180px_auto]">
+                                <div
+                                    key={i}
+                                    className="bg-muted/30 ring-border/60 grid gap-3 rounded-2xl p-4 ring-1 md:grid-cols-[auto_1fr_180px_auto]"
+                                >
                                     <button
                                         type="button"
                                         onClick={() => setMilestone(i, { completed: !m.completed })}
@@ -301,7 +274,7 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                                             'flex size-10 items-center justify-center self-center rounded-xl transition-all',
                                             m.completed
                                                 ? 'shadow-soft-sm bg-gradient-to-br from-emerald-500 to-teal-600 text-white'
-                                                : 'bg-card text-muted-foreground ring-border ring-1 hover:text-foreground',
+                                                : 'bg-card text-muted-foreground ring-border hover:text-foreground ring-1',
                                         )}
                                         aria-label="Toggle complete"
                                     >
@@ -312,12 +285,14 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
                                         onChange={(e) => setMilestone(i, { title: e.target.value })}
                                         placeholder="Milestone title"
                                     />
-                                    <Input
-                                        type="date"
-                                        value={m.due_date}
-                                        onChange={(e) => setMilestone(i, { due_date: e.target.value })}
-                                    />
-                                    <Button type="button" variant="ghost" size="icon" className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" onClick={() => removeMilestone(i)}>
+                                    <Input type="date" value={m.due_date} onChange={(e) => setMilestone(i, { due_date: e.target.value })} />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                                        onClick={() => removeMilestone(i)}
+                                    >
                                         <Trash2 className="size-4" />
                                     </Button>
                                 </div>
@@ -343,7 +318,7 @@ export function ProjectForm({ initial, users, statuses, priorities, colors, curr
 function Field({ label, error, children, className }: { label: string; error?: string; children: React.ReactNode; className?: string }) {
     return (
         <div className={cn('space-y-1.5', className)}>
-            <Label className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">{label}</Label>
+            <Label className="text-muted-foreground text-[10px] font-bold tracking-[0.14em] uppercase">{label}</Label>
             {children}
             <InputError message={error} />
         </div>

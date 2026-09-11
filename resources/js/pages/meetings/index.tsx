@@ -3,7 +3,6 @@ import { SoftCard, SoftCardBody, SoftCardTitle } from '@/components/soft-card';
 import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
-import { usePermissions } from '@/hooks/use-permissions';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
@@ -12,7 +11,11 @@ import { CalendarClock, CalendarPlus, ClipboardList, History, Users } from 'luci
 
 type View = 'upcoming' | 'past' | 'mine';
 
-interface UserMini { id: number; name: string; avatar?: string | null }
+interface UserMini {
+    id: number;
+    name: string;
+    avatar?: string | null;
+}
 
 interface MeetingRow {
     id: number;
@@ -42,7 +45,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function MeetingsIndex({ meetings, view, stats }: Props) {
-    const { user } = usePermissions();
     const getInitials = useInitials();
     const setView = (v: View) => router.get(route('meetings.index'), { view: v }, { preserveScroll: true, preserveState: true });
 
@@ -57,10 +59,14 @@ export default function MeetingsIndex({ meetings, view, stats }: Props) {
                     actions={
                         <>
                             <Button asChild variant="secondary" size="sm" className="gap-1.5">
-                                <Link href={route('meetings.templates.index')}><ClipboardList className="size-3.5" /> Templates</Link>
+                                <Link href={route('meetings.templates.index')}>
+                                    <ClipboardList className="size-3.5" /> Templates
+                                </Link>
                             </Button>
                             <Button asChild className="gap-2">
-                                <Link href={route('meetings.create')}><CalendarPlus className="size-4" /> New meeting</Link>
+                                <Link href={route('meetings.create')}>
+                                    <CalendarPlus className="size-4" /> New meeting
+                                </Link>
                             </Button>
                         </>
                     }
@@ -72,7 +78,7 @@ export default function MeetingsIndex({ meetings, view, stats }: Props) {
                     <StatCard label="Mine" value={stats.mine} icon={Users} accent="emerald" />
                 </section>
 
-                <div className="bg-muted/40 ring-border/60 ring-1 inline-flex w-fit gap-1 rounded-xl p-1">
+                <div className="bg-muted/40 ring-border/60 inline-flex w-fit gap-1 rounded-xl p-1 ring-1">
                     {(['upcoming', 'past', 'mine'] as View[]).map((v) => (
                         <button
                             key={v}
@@ -89,7 +95,9 @@ export default function MeetingsIndex({ meetings, view, stats }: Props) {
                 </div>
 
                 <SoftCard>
-                    <SoftCardTitle eyebrow="List">{view === 'upcoming' ? 'Upcoming meetings' : view === 'past' ? 'Past meetings' : 'My meetings'}</SoftCardTitle>
+                    <SoftCardTitle eyebrow="List">
+                        {view === 'upcoming' ? 'Upcoming meetings' : view === 'past' ? 'Past meetings' : 'My meetings'}
+                    </SoftCardTitle>
                     <SoftCardBody>
                         {meetings.length === 0 ? (
                             <p className="text-muted-foreground text-sm">Nothing here yet.</p>
@@ -97,23 +105,30 @@ export default function MeetingsIndex({ meetings, view, stats }: Props) {
                             <ul className="divide-border/40 -mx-3 divide-y">
                                 {meetings.map((m) => (
                                     <li key={m.id}>
-                                        <Link href={route('meetings.show', m.id)} className="hover:bg-muted/40 flex flex-col gap-2 rounded-lg px-3 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4">
-                                            <div className="from-violet-500 to-indigo-600 flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-soft-xs">
+                                        <Link
+                                            href={route('meetings.show', m.id)}
+                                            className="hover:bg-muted/40 flex flex-col gap-2 rounded-lg px-3 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4"
+                                        >
+                                            <div className="shadow-soft-xs flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white">
                                                 <CalendarClock className="size-5" />
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-semibold">{m.title}</p>
                                                 <p className="text-muted-foreground truncate text-xs">
-                                                    {new Date(m.starts_at).toLocaleString()} · {m.kind.replace('_', ' ')}{m.location ? ` · ${m.location}` : ''}
+                                                    {new Date(m.starts_at).toLocaleString()} · {m.kind.replace('_', ' ')}
+                                                    {m.location ? ` · ${m.location}` : ''}
                                                     {m.project ? ` · ${m.project.title}` : ''}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                                            <div className="text-muted-foreground flex items-center gap-3 text-[11px]">
                                                 <span>{m.agenda_items_count} agenda</span>
                                                 <span>{m.action_items_count} actions</span>
                                                 <div className="flex -space-x-1.5">
                                                     {m.participants.slice(0, 4).map((p) => (
-                                                        <span key={p.id} className="from-violet-500 to-indigo-600 ring-card flex size-6 items-center justify-center rounded-full bg-gradient-to-br text-[10px] font-bold text-white ring-2">
+                                                        <span
+                                                            key={p.id}
+                                                            className="ring-card flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[10px] font-bold text-white ring-2"
+                                                        >
                                                             {getInitials(p.name)}
                                                         </span>
                                                     ))}

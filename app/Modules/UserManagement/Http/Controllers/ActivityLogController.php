@@ -17,14 +17,22 @@ class ActivityLogController extends Controller
 
         $query = Activity::query()
             ->with(['user:id,name,avatar', 'subjectUser:id,name,avatar'])
-            ->when($filters['module'] ?? null, fn ($q, $m) => $q->where('module', $m))
-            ->when($filters['user_id'] ?? null, fn ($q, $u) => $q->where('user_id', $u))
-            ->when($filters['action'] ?? null, fn ($q, $a) => $q->where('action', 'like', "{$a}%"))
+            // Arrays from the multi-select filters; scalars still accepted.
+            ->when($filters['module'] ?? null, fn ($q, $m) => $q->whereIn('module', (array) $m))
+            ->when($filters['user_id'] ?? null, fn ($q, $u) => $q->whereIn('user_id', (array) $u))
+            ->when($filters['action'] ?? null, fn ($q, $a) => $q->where(function ($inner) use ($a) {
+                foreach ((array) $a as $prefix) {
+                    $inner->orWhere('action', 'like', "{$prefix}%");
+                }
+            }))
             ->when($filters['date_from'] ?? null, fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
             ->when($filters['date_to'] ?? null, fn ($q, $d) => $q->whereDate('created_at', '<=', $d))
             ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('description', 'like', "%{$s}%"));
 
-        $activities = $query->latest()->paginate(50)->withQueryString();
+        // Deterministic order matters most here: paging a log ordered only by
+        // created_at can show the same row twice, or skip one, when a page
+        // boundary lands inside a batch written in the same second.
+        $activities = $query->chronological()->paginate(50)->withQueryString();
 
         $modules = Activity::query()->select('module')->whereNotNull('module')->distinct()->orderBy('module')->pluck('module');
         $actions = Activity::query()->select('action')->distinct()->orderBy('action')->pluck('action');

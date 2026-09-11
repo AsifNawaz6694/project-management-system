@@ -1,15 +1,16 @@
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import { MentionText } from '@/components/mention-text';
+import { RichText, RichTextEditor } from '@/components/rich-text';
 import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { Link, router, useForm } from '@inertiajs/react';
-import { LoaderCircle, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { LoaderCircle, Lock, MessageSquare, Send, Trash2 } from 'lucide-react';
 import { type FormEventHandler, useState } from 'react';
 
 export interface CommentNode {
     id: number;
     body: string;
+    is_internal?: boolean;
     created_at: string;
     user: { id: number; name: string; avatar?: string | null };
     replies?: CommentNode[];
@@ -24,13 +25,20 @@ interface CommentThreadProps {
     placeholder?: string;
 }
 
-export function CommentThread({ comments, storeUrl, destroyUrlFor, currentUserId, canDeleteAny, placeholder = 'Drop a comment, use @name to mention…' }: CommentThreadProps) {
+export function CommentThread({
+    comments,
+    storeUrl,
+    destroyUrlFor,
+    currentUserId,
+    canDeleteAny,
+    placeholder = 'Drop a comment, use @name to mention…',
+}: CommentThreadProps) {
     return (
         <div className="space-y-4">
             <CommentComposer storeUrl={storeUrl} placeholder={placeholder} />
             <ul className="space-y-4">
                 {comments.length === 0 && (
-                    <li className="bg-muted/30 ring-border/60 ring-1 rounded-2xl py-10 text-center">
+                    <li className="bg-muted/30 ring-border/60 rounded-2xl py-10 text-center ring-1">
                         <MessageSquare className="text-muted-foreground mx-auto size-5" />
                         <p className="text-muted-foreground mt-2 text-sm">No comments yet — start the conversation.</p>
                     </li>
@@ -72,30 +80,43 @@ function CommentNodeView({
 
     return (
         <li className={cn('group animate-[fade-in-up_0.3s_ease-out]', depth > 0 && 'pl-10')}>
-            <div className="relative bg-card ring-border/60 shadow-soft-xs hover:shadow-soft-sm ring-1 rounded-2xl p-4 transition-all">
-                {depth > 0 && (
-                    <span className="absolute -left-6 top-6 h-px w-6 bg-border" />
-                )}
+            <div className="bg-card ring-border/60 shadow-soft-xs hover:shadow-soft-sm relative rounded-2xl p-4 ring-1 transition-all">
+                {depth > 0 && <span className="bg-border absolute top-6 -left-6 h-px w-6" />}
                 <div className="flex items-start gap-3">
-                    <Link href={route('users.show', node.user.id)} className="from-violet-500 to-indigo-600 ring-card shadow-soft-xs flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-bold text-white ring-2">
+                    <Link
+                        href={route('users.show', node.user.id)}
+                        className="ring-card shadow-soft-xs flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-xs font-bold text-white ring-2"
+                    >
                         {getInitials(node.user.name)}
                     </Link>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2">
-                            <Link href={route('users.show', node.user.id)} className="text-sm font-semibold hover:text-violet-600 dark:hover:text-violet-300">{node.user.name}</Link>
+                            <Link
+                                href={route('users.show', node.user.id)}
+                                className="text-sm font-semibold hover:text-blue-600 dark:hover:text-blue-300"
+                            >
+                                {node.user.name}
+                            </Link>
                             <span className="text-muted-foreground text-[11px]">{relativeTime(node.created_at)}</span>
                         </div>
-                        <p className="mt-1 whitespace-pre-line text-sm leading-relaxed">
-                            <MentionText>{node.body}</MentionText>
-                        </p>
+                        {node.is_internal && (
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                                <Lock className="size-2.5" />
+                                Internal note
+                            </span>
+                        )}
+                        <RichText value={node.body} className="mt-1" />
                         <div className="mt-2 flex items-center gap-3">
-                            <button onClick={() => setReplying((v) => !v)} className="text-muted-foreground hover:text-foreground text-[11px] font-semibold transition-colors">
+                            <button
+                                onClick={() => setReplying((v) => !v)}
+                                className="text-muted-foreground hover:text-foreground text-[11px] font-semibold transition-colors"
+                            >
                                 {replying ? 'Cancel' : 'Reply'}
                             </button>
                             {canDelete && (
                                 <button
                                     onClick={() => setConfirmDelete(true)}
-                                    className="text-muted-foreground/60 hover:text-rose-500 text-[11px] inline-flex items-center gap-1 font-semibold transition-colors"
+                                    className="text-muted-foreground/60 inline-flex items-center gap-1 text-[11px] font-semibold transition-colors hover:text-rose-500"
                                 >
                                     <Trash2 className="size-3" /> Delete
                                 </button>
@@ -103,7 +124,13 @@ function CommentNodeView({
                         </div>
                         {replying && (
                             <div className="mt-3">
-                                <CommentComposer storeUrl={storeUrl} parentId={node.id} placeholder={`Reply to ${node.user.name}…`} compact onPosted={() => setReplying(false)} />
+                                <CommentComposer
+                                    storeUrl={storeUrl}
+                                    parentId={node.id}
+                                    placeholder={`Reply to ${node.user.name}…`}
+                                    compact
+                                    onPosted={() => setReplying(false)}
+                                />
                             </div>
                         )}
                     </div>
@@ -143,7 +170,19 @@ function CommentNodeView({
     );
 }
 
-function CommentComposer({ storeUrl, parentId, placeholder, compact, onPosted }: { storeUrl: string; parentId?: number; placeholder?: string; compact?: boolean; onPosted?: () => void }) {
+function CommentComposer({
+    storeUrl,
+    parentId,
+    placeholder,
+    compact,
+    onPosted,
+}: {
+    storeUrl: string;
+    parentId?: number;
+    placeholder?: string;
+    compact?: boolean;
+    onPosted?: () => void;
+}) {
     const form = useForm<{ body: string; parent_id?: number }>({ body: '', parent_id: parentId });
 
     const submit: FormEventHandler = (e) => {
@@ -159,13 +198,16 @@ function CommentComposer({ storeUrl, parentId, placeholder, compact, onPosted }:
     };
 
     return (
-        <form onSubmit={submit} className={cn('bg-card ring-border/60 ring-1 shadow-soft-xs flex flex-col gap-2 rounded-2xl p-3', compact && 'rounded-xl')}>
-            <textarea
+        <form
+            onSubmit={submit}
+            className={cn('bg-card ring-border/60 shadow-soft-xs flex flex-col gap-2 rounded-2xl p-3 ring-1', compact && 'rounded-xl')}
+        >
+            <RichTextEditor
                 value={form.data.body}
-                onChange={(e) => form.setData('body', e.target.value)}
+                onChange={(v) => form.setData('body', v)}
                 rows={compact ? 2 : 3}
                 placeholder={placeholder}
-                className="bg-muted/30 ring-border/60 focus-visible:border-foreground/30 focus-visible:ring-violet-200/60 dark:focus-visible:ring-violet-500/20 ring-1 w-full resize-none rounded-xl px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-4"
+                className="bg-muted/30"
             />
             <div className="flex items-center justify-end">
                 <Button type="submit" size="sm" disabled={form.processing || !form.data.body.trim()} className="gap-1.5">

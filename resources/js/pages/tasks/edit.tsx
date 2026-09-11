@@ -1,7 +1,7 @@
 import { PageHeader } from '@/components/page-header';
-import { TaskForm, minutesToHm, type AssigneeOption, type ProjectOption } from '@/components/task-form';
+import { TaskForm, minutesToHm, type AssigneeOption, type ProjectOption, type SimpleOption } from '@/components/task-form';
 import AppLayout from '@/layouts/app-layout';
-import { type TaskPriority, type TaskStatus } from '@/lib/tasks';
+import { type TaskPriority, type TaskStatus, type WorkflowStatus } from '@/lib/tasks';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 
@@ -14,17 +14,31 @@ interface TasksEditProps {
         status: TaskStatus;
         priority: TaskPriority;
         due_date: string | null;
+        start_date: string | null;
         estimate_minutes: number | null;
         assignee_id: number | null;
-        subtasks: Array<{ title: string; description: string | null; due_date: string | null; completed: boolean; assignee_id: number | null }>;
+        team_id: number | null;
+        task_type_id: number | null;
+        label_ids: number[];
+        subtasks: Array<{
+            id: number;
+            title: string;
+            description: string | null;
+            due_date: string | null;
+            completed: boolean;
+            assignee_id: number | null;
+        }>;
     };
     projects: ProjectOption[];
     assignees: AssigneeOption[];
-    statuses: string[];
+    teams: SimpleOption[];
+    labels: SimpleOption[];
+    types: SimpleOption[];
+    statuses: WorkflowStatus[];
     priorities: string[];
 }
 
-export default function TasksEdit({ task, projects, assignees, statuses, priorities }: TasksEditProps) {
+export default function TasksEdit({ task, projects, assignees, teams, labels, types, statuses, priorities }: TasksEditProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Workspace', href: '/dashboard' },
         { title: 'Tasks', href: '/tasks' },
@@ -36,7 +50,11 @@ export default function TasksEdit({ task, projects, assignees, statuses, priorit
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${task.title}`} />
             <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
-                <PageHeader eyebrow="Task management" title={`Edit ${task.title}`} description="Tweak the title, status, priority, assignee, or breakdown." />
+                <PageHeader
+                    eyebrow="Task management"
+                    title={`Edit ${task.title}`}
+                    description="Tweak the title, status, priority, owner, labels or breakdown."
+                />
                 <TaskForm
                     initial={{
                         project_id: task.project_id,
@@ -45,9 +63,16 @@ export default function TasksEdit({ task, projects, assignees, statuses, priorit
                         status: task.status,
                         priority: task.priority,
                         due_date: task.due_date ?? '',
+                        start_date: task.start_date ?? '',
                         estimate_hm: minutesToHm(task.estimate_minutes),
                         assignee_id: task.assignee_id,
+                        team_id: task.team_id,
+                        task_type_id: task.task_type_id,
+                        labels: task.label_ids ?? [],
+                        // Carrying the id through is what lets the server update
+                        // subtasks in place instead of recreating them.
                         subtasks: (task.subtasks ?? []).map((s) => ({
+                            id: s.id,
                             title: s.title,
                             description: s.description ?? '',
                             due_date: s.due_date ?? '',
@@ -57,6 +82,9 @@ export default function TasksEdit({ task, projects, assignees, statuses, priorit
                     }}
                     projects={projects}
                     assignees={assignees}
+                    teams={teams}
+                    labelOptions={labels}
+                    types={types}
                     statuses={statuses}
                     priorities={priorities}
                     submitUrl={route('tasks.update', task.id)}

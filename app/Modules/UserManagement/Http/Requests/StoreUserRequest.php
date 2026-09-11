@@ -8,9 +8,24 @@ use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
+    /**
+     * The base permission gates the request; granting roles or raw permissions
+     * needs the narrower grant on top, so a user-editor cannot quietly escalate
+     * someone (RBAC §15 — enforced server-side, not by hiding the control).
+     */
     public function authorize(): bool
     {
-        return $this->user()?->hasPermission('users.create') ?? false;
+        $user = $this->user();
+
+        if (! $user?->hasPermission('users.create')) {
+            return false;
+        }
+
+        if ($this->has('roles') && ! $user->hasPermission('users.assign-roles')) {
+            return false;
+        }
+
+        return ! $this->has('permissions') || $user->hasPermission('users.assign-permissions');
     }
 
     public function rules(): array
@@ -21,11 +36,14 @@ class StoreUserRequest extends FormRequest
             'password' => ['required', 'string', 'min:8', 'max:120'],
             'phone' => ['nullable', 'string', 'max:32'],
             'job_title' => ['nullable', 'string', 'max:120'],
-            'department' => ['nullable', 'string', 'max:120'],
+            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
             'status' => ['nullable', Rule::in(['active', 'invited', 'suspended'])],
             'two_factor_enabled' => ['boolean'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['string', Rule::in([Role::ADMIN, Role::MANAGER, Role::EMPLOYEE])],
+            // Direct grants: the responsibilities layered on top of a role.
+            'permissions' => ['sometimes', 'array'],
+            'permissions.*' => ['string', 'exists:permissions,slug'],
         ];
     }
 }

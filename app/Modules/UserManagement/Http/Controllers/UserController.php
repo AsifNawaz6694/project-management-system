@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Modules\UserManagement\Http\Requests\StoreUserRequest;
 use App\Modules\UserManagement\Http\Requests\UpdateUserRequest;
 use App\Modules\UserManagement\Models\Activity;
+use App\Modules\UserManagement\Models\Department;
 use App\Modules\UserManagement\Models\Role;
 use App\Modules\UserManagement\Services\UserService;
 use Illuminate\Http\RedirectResponse;
@@ -20,22 +21,26 @@ class UserController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'role', 'status']);
+        $filters = $request->only(['search', 'role', 'status', 'department']);
 
         $users = User::query()
-            ->with('roles:id,slug,name')
+            ->with(['roles:id,slug,name', 'department:id,slug,name'])
             ->when($filters['search'] ?? null, function ($q, $search) {
                 $q->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('job_title', 'like', "%{$search}%")
-                        ->orWhere('department', 'like', "%{$search}%");
+                        ->orWhereHas('department', fn ($d) => $d->where('name', 'like', "%{$search}%"));
                 });
             })
+            // Arrays from the multi-select filters; scalars still accepted.
             ->when($filters['role'] ?? null, function ($q, $role) {
-                $q->whereHas('roles', fn ($q) => $q->where('slug', $role));
+                $q->whereHas('roles', fn ($q) => $q->whereIn('slug', (array) $role));
             })
-            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+            ->when($filters['status'] ?? null, fn ($q, $status) => $q->whereIn('status', (array) $status))
+            ->when($filters['department'] ?? null, function ($q, $department) {
+                $q->whereHas('department', fn ($d) => $d->whereIn('slug', (array) $department));
+            })
             ->orderBy('name')
             ->paginate(24)
             ->withQueryString();
@@ -51,6 +56,7 @@ class UserController extends Controller
             'users' => $users,
             'filters' => $filters,
             'roles' => Role::orderBy('id')->get(['id', 'slug', 'name']),
+            'departments' => Department::orderBy('name')->get(['id', 'slug', 'name']),
             'stats' => $stats,
         ]);
     }
@@ -59,6 +65,7 @@ class UserController extends Controller
     {
         return Inertia::render('users/create', [
             'roles' => Role::orderBy('id')->get(['id', 'slug', 'name', 'description']),
+            'departments' => Department::orderBy('name')->get(['id', 'slug', 'name']),
         ]);
     }
 
@@ -73,7 +80,12 @@ class UserController extends Controller
 
     public function show(User $user): Response
     {
-        $user->load('roles.permissions:id,slug,name,module');
+        $user->load([
+            'roles.permissions:id,slug,name,module',
+            'directPermissions:id,slug,name,module',
+            'department:id,slug,name',
+            'teams:id,slug,name,color',
+        ]);
 
         $activities = Activity::query()
             ->where('subject_user_id', $user->id)
@@ -86,16 +98,18 @@ class UserController extends Controller
             'user' => $user,
             'activities' => $activities,
             'permissionSlugs' => $user->permissionSlugs(),
+            'directPermissionSlugs' => $user->directPermissions->pluck('slug'),
         ]);
     }
 
     public function edit(User $user): Response
     {
-        $user->load('roles:id,slug');
+        $user->load(['roles:id,slug', 'department:id,slug,name']);
 
         return Inertia::render('users/edit', [
             'user' => $user,
             'roles' => Role::orderBy('id')->get(['id', 'slug', 'name', 'description']),
+            'departments' => Department::orderBy('name')->get(['id', 'slug', 'name']),
         ]);
     }
 

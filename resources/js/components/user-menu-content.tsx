@@ -16,7 +16,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
         <>
             <DropdownMenuLabel className="p-2 font-normal">
                 <div className="flex flex-col gap-2">
-                    <div className="text-sm font-semibold leading-tight">{user.name}</div>
+                    <div className="text-sm leading-tight font-semibold">{user.name}</div>
                     <div className="text-muted-foreground truncate text-xs">{user.email}</div>
                     <div>
                         <RoleBadge role={user.primary_role} />

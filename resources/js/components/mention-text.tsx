@@ -19,7 +19,7 @@ export function MentionText({ children }: { children: string }) {
                 p.type === 'mention' ? (
                     <span
                         key={i}
-                        className="bg-violet-100 text-violet-700 ring-violet-200 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/30 inline-flex items-center rounded-md px-1 font-semibold ring-1"
+                        className="inline-flex items-center rounded-md bg-blue-100 px-1 font-semibold text-blue-700 ring-1 ring-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/30"
                     >
                         @{p.value}
                     </span>

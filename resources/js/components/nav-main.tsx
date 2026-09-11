@@ -13,7 +13,7 @@ export function NavMain() {
         <>
             {sections.map((section) => (
                 <SidebarGroup key={section.label} className="px-3 py-1.5">
-                    <SidebarGroupLabel className="text-muted-foreground/70 mb-1 px-2 text-[10px] font-bold uppercase tracking-[0.14em]">
+                    <SidebarGroupLabel className="text-muted-foreground/70 mb-1 px-2 text-[10px] font-bold tracking-[0.14em] uppercase">
                         {section.label}
                     </SidebarGroupLabel>
                     <SidebarMenu className="gap-1">
@@ -27,7 +27,7 @@ export function NavMain() {
                                         className={cn(
                                             'group/item relative h-11 overflow-hidden rounded-xl px-3 transition-all duration-200',
                                             isActive
-                                                ? 'shadow-soft-md bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 font-semibold text-white hover:bg-gradient-to-r hover:from-violet-600 hover:to-blue-600 hover:text-white'
+                                                ? 'shadow-soft-md bg-gradient-to-r from-blue-600 to-blue-700 font-semibold text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-700 hover:text-white'
                                                 : 'hover:bg-sidebar-accent text-sidebar-foreground hover:text-sidebar-accent-foreground',
                                         )}
                                     >
@@ -38,7 +38,7 @@ export function NavMain() {
                                                         'flex size-7 items-center justify-center rounded-lg transition-all',
                                                         isActive
                                                             ? 'bg-white/20 text-white'
-                                                            : 'text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/10 group-hover/item:bg-violet-100 dark:group-hover/item:bg-violet-500/20',
+                                                            : 'bg-blue-50 text-blue-600 group-hover/item:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-300 dark:group-hover/item:bg-blue-500/20',
                                                     )}
                                                 >
                                                     <Icon iconNode={item.icon} className="size-4" />

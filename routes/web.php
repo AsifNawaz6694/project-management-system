@@ -15,10 +15,12 @@ Route::middleware(['auth'])->group(function () {
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
 require __DIR__.'/../app/Modules/UserManagement/routes.php';
+require __DIR__.'/../app/Modules/Search/routes.php';
 require __DIR__.'/../app/Modules/ProjectManagement/routes.php';
 require __DIR__.'/../app/Modules/TaskManagement/routes.php';
+require __DIR__.'/../app/Modules/Workflow/routes.php';
+require __DIR__.'/../app/Modules/Automation/routes.php';
 require __DIR__.'/../app/Modules/Communication/routes.php';
-require __DIR__.'/../app/Modules/ExpenseManagement/routes.php';
 require __DIR__.'/../app/Modules/NotificationCenter/routes.php';
 require __DIR__.'/../app/Modules/Reporting/routes.php';
 require __DIR__.'/../app/Modules/Teams/routes.php';

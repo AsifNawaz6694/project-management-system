@@ -20,8 +20,8 @@ export const STATUS_META: Record<ProjectStatus, { label: string; chip: string; d
     },
     completed: {
         label: 'Completed',
-        chip: 'bg-violet-50 text-violet-700 ring-violet-200/70 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30',
-        dot: 'bg-violet-500',
+        chip: 'bg-indigo-50 text-indigo-700 ring-indigo-200/70 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/30',
+        dot: 'bg-indigo-600',
     },
     cancelled: {
         label: 'Cancelled',
@@ -50,32 +50,26 @@ export const PRIORITY_META: Record<ProjectPriority, { label: string; chip: strin
 };
 
 export const COLOR_GRADIENT: Record<ProjectColor, string> = {
-    violet: 'from-violet-500 via-indigo-600 to-blue-600',
-    blue: 'from-blue-500 via-sky-500 to-cyan-500',
-    emerald: 'from-emerald-500 via-teal-500 to-cyan-600',
-    amber: 'from-amber-400 via-orange-500 to-rose-500',
-    rose: 'from-rose-500 via-pink-500 to-fuchsia-500',
-    pink: 'from-pink-500 via-fuchsia-500 to-violet-500',
-    sky: 'from-sky-400 via-cyan-500 to-blue-500',
-    slate: 'from-slate-500 via-slate-700 to-slate-900',
+    violet: 'from-indigo-500 to-indigo-700',
+    blue: 'from-blue-500 to-blue-700',
+    emerald: 'from-emerald-500 to-emerald-700',
+    amber: 'from-amber-500 to-amber-600',
+    rose: 'from-red-500 to-red-700',
+    pink: 'from-pink-400 to-pink-600',
+    sky: 'from-sky-500 to-sky-700',
+    slate: 'from-slate-500 to-slate-700',
 };
 
 export const COLOR_DOT: Record<ProjectColor, string> = {
-    violet: 'bg-violet-500',
-    blue: 'bg-blue-500',
-    emerald: 'bg-emerald-500',
+    violet: 'bg-indigo-600',
+    blue: 'bg-blue-600',
+    emerald: 'bg-emerald-600',
     amber: 'bg-amber-500',
-    rose: 'bg-rose-500',
+    rose: 'bg-red-600',
     pink: 'bg-pink-500',
-    sky: 'bg-sky-500',
+    sky: 'bg-sky-600',
     slate: 'bg-slate-500',
 };
-
-import { formatCurrency } from '@/lib/currency';
-
-export function formatBudget(value?: number | string | null, currency?: string | null): string {
-    return formatCurrency(value, currency);
-}
 
 export function formatDate(value?: string | null): string {
     if (!value) return '—';

@@ -2,6 +2,12 @@ import { LucideIcon } from 'lucide-react';
 
 export type RoleSlug = 'admin' | 'manager' | 'employee';
 
+export interface DepartmentSummary {
+    id: number;
+    slug: string;
+    name: string;
+}
+
 export interface RoleSummary {
     slug: RoleSlug | string;
     name: string;
@@ -11,11 +17,13 @@ export interface AuthUser {
     id: number;
     name: string;
     email: string;
+    email_verified_at?: string | null;
     avatar?: string | null;
     phone?: string | null;
     job_title?: string | null;
     department?: string | null;
     status?: 'active' | 'invited' | 'suspended';
+    department_id?: number | null;
     initials: string;
     roles: RoleSummary[];
     primary_role: RoleSlug | string | null;
@@ -65,7 +73,8 @@ export interface User {
     avatar?: string | null;
     phone?: string | null;
     job_title?: string | null;
-    department?: string | null;
+    department_id?: number | null;
+    department?: DepartmentSummary | null;
     status?: 'active' | 'invited' | 'suspended';
     two_factor_enabled?: boolean;
     last_login_at?: string | null;

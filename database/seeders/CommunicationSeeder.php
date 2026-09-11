@@ -11,11 +11,11 @@ class CommunicationSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('email', 'admin@raqtan.com')->first();
-        $manager = User::where('email', 'manager@raqtan.com')->first();
-        $employee = User::where('email', 'employee@raqtan.com')->first();
-        $yara = User::where('email', 'yara@raqtan.com')->first();
-        $bilal = User::where('email', 'bilal@raqtan.com')->first();
+        $admin = User::where('email', 'asif@bargoventures.com')->first();
+        $manager = User::where('email', 'saad@bargoventures.com')->first();
+        $employee = User::where('email', 'yousuf@bargoventures.com')->first();
+        $yara = User::where('email', 'sameer@bargoventures.com')->first();
+        $bilal = User::where('email', 'muneeb@bargoventures.com')->first();
 
         $threads = [
             [

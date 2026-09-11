@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Modules\ExpenseManagement\Models\Expense;
 use App\Modules\NotificationCenter\Models\Notification;
 use App\Modules\ProjectManagement\Models\Project;
 use App\Modules\TaskManagement\Models\Task;
@@ -32,7 +31,6 @@ class DashboardController extends Controller
     {
         $projects = Project::query();
         $tasks = Task::query()->root();
-        $expenses = Expense::query();
 
         $projectsTotal = (clone $projects)->count();
         $projectsActive = (clone $projects)->where('status', 'active')->count();
@@ -51,11 +49,6 @@ class DashboardController extends Controller
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<', now())
             ->count();
-
-        $totalBudget = (float) Project::sum('budget');
-        $totalSpent = (float) Expense::where('status', 'approved')->sum('amount');
-        $pendingApproval = (clone $expenses)->where('status', 'pending')->count();
-        $pendingApprovalAmount = (float) (clone $expenses)->where('status', 'pending')->sum('amount');
 
         $statusBreakdown = [
             ['key' => 'planning', 'label' => 'Planning', 'value' => (clone $projects)->where('status', 'planning')->count(), 'tone' => 'from-blue-500 to-cyan-500'],
@@ -80,26 +73,21 @@ class DashboardController extends Controller
         $topProjects = Project::query()
             ->orderByDesc('progress')
             ->limit(5)
-            ->get(['id', 'slug', 'title', 'color', 'progress', 'status', 'budget'])
-            ->map(function (Project $p) {
-                $approved = (float) Expense::where('project_id', $p->id)->where('status', 'approved')->sum('amount');
-                $budget = (float) ($p->budget ?? 0);
-
-                return [
-                    'id' => $p->id,
-                    'slug' => $p->slug,
-                    'title' => $p->title,
-                    'color' => $p->color,
-                    'progress' => $p->progress,
-                    'status' => $p->status,
-                    'budget' => $budget,
-                    'spent' => $approved,
-                    'utilization' => $budget > 0 ? min(100, (int) round($approved / $budget * 100)) : 0,
-                ];
-            });
+            ->get(['id', 'slug', 'title', 'color', 'progress', 'status'])
+            ->map(fn (Project $p) => [
+                'id' => $p->id,
+                'slug' => $p->slug,
+                'title' => $p->title,
+                'color' => $p->color,
+                'progress' => $p->progress,
+                'status' => $p->status,
+            ]);
 
         $topPerformers = User::query()
-            ->withCount(['performedActivities as completed_tasks' => fn ($q) => $q->where('action', 'task.status-changed')->whereJsonContains('properties->to', 'completed')])
+            // task.completed is written whenever the workflow says the task is
+            // done, so this no longer depends on a status literally named
+            // "completed" — the seeded pipeline's done status is "deployed".
+            ->withCount(['performedActivities as completed_tasks' => fn ($q) => $q->where('action', 'task.completed')])
             ->orderByDesc('completed_tasks')
             ->limit(5)
             ->get(['id', 'name', 'avatar', 'job_title'])
@@ -150,19 +138,14 @@ class DashboardController extends Controller
         return [
             'kpis' => [
                 ['label' => 'Active projects', 'value' => $projectsActive, 'sub' => $projectsTotal.' total · '.$projectsAtRisk.' at risk', 'icon' => 'folder-kanban', 'accent' => 'violet'],
-                ['label' => 'Tasks in flight', 'value' => $tasksProgress, 'sub' => $tasksOverdue.' overdue · '.$tasksDone.' done', 'icon' => 'list-checks', 'accent' => 'amber'],
-                ['label' => 'Approved spend', 'value' => $this->money($totalSpent), 'sub' => 'Of '.$this->money($totalBudget).' budget', 'icon' => 'wallet', 'accent' => 'emerald'],
-                ['label' => 'Pending approvals', 'value' => $pendingApproval, 'sub' => $this->money($pendingApprovalAmount).' awaiting', 'icon' => 'hourglass', 'accent' => 'rose'],
+                ['label' => 'Tasks in flight', 'value' => $tasksProgress, 'sub' => $tasksTotal.' tracked in total', 'icon' => 'list-checks', 'accent' => 'amber'],
+                ['label' => 'Completed tasks', 'value' => $tasksDone, 'sub' => ($tasksTotal > 0 ? (int) round($tasksDone / $tasksTotal * 100) : 0).'% completion rate', 'icon' => 'check-circle-2', 'accent' => 'emerald'],
+                ['label' => 'Overdue tasks', 'value' => $tasksOverdue, 'sub' => $projectsAtRisk.' projects at risk', 'icon' => 'alert-circle', 'accent' => 'rose'],
             ],
             'completion' => [
                 'total_tasks' => $tasksTotal,
                 'completed_tasks' => $tasksDone,
                 'completion_rate' => $tasksTotal > 0 ? (int) round($tasksDone / $tasksTotal * 100) : 0,
-            ],
-            'budget' => [
-                'total' => $totalBudget,
-                'spent' => $totalSpent,
-                'utilization' => $totalBudget > 0 ? min(100, (int) round($totalSpent / $totalBudget * 100)) : 0,
             ],
             'statusBreakdown' => $statusBreakdown,
             'burndown' => $burndown,
@@ -188,10 +171,11 @@ class DashboardController extends Controller
             ->count();
         $totalForMe = (clone $myTasks)->count();
 
-        $myExpenses = Expense::query()->where('user_id', $user->id);
-        $expensesPending = (clone $myExpenses)->where('status', 'pending')->count();
-        $expensesApproved = (float) (clone $myExpenses)->where('status', 'approved')->sum('amount');
-        $expensesPendingAmount = (float) (clone $myExpenses)->where('status', 'pending')->sum('amount');
+        $dueThisWeek = (clone $myTasks)
+            ->where('status', '!=', 'completed')
+            ->whereNotNull('due_date')
+            ->whereBetween('due_date', [now()->startOfDay(), now()->addDays(7)->endOfDay()])
+            ->count();
 
         $velocity = collect(range(6, 0))->map(function ($daysAgo) use ($user) {
             $date = now()->subDays($daysAgo)->startOfDay();
@@ -252,7 +236,7 @@ class DashboardController extends Controller
                 ['label' => 'My open tasks', 'value' => $todo + $inProgress, 'sub' => $todo.' to do · '.$inProgress.' in progress', 'icon' => 'list-checks', 'accent' => 'violet'],
                 ['label' => 'Completed (all-time)', 'value' => $completed, 'sub' => $totalForMe.' total assigned', 'icon' => 'check-circle-2', 'accent' => 'emerald'],
                 ['label' => 'Overdue', 'value' => $overdue, 'sub' => $overdue === 0 ? 'You\'re on track' : 'Needs attention', 'icon' => 'alert-circle', 'accent' => 'rose'],
-                ['label' => 'My expenses', 'value' => $expensesPending, 'sub' => $this->money($expensesPendingAmount).' pending · '.$this->money($expensesApproved).' approved', 'icon' => 'wallet', 'accent' => 'amber'],
+                ['label' => 'Due this week', 'value' => $dueThisWeek, 'sub' => $dueThisWeek === 0 ? 'Nothing due soon' : 'Next 7 days', 'icon' => 'calendar-clock', 'accent' => 'amber'],
             ],
             'completion' => [
                 'total_tasks' => $totalForMe,
@@ -265,17 +249,5 @@ class DashboardController extends Controller
             'recentActivity' => $recentActivity,
             'unreadNotifications' => Notification::where('user_id', $user->id)->whereNull('read_at')->count(),
         ];
-    }
-
-    private function money(float $amount): string
-    {
-        if ($amount >= 1_000_000) {
-            return '$'.number_format($amount / 1_000_000, 1).'M';
-        }
-        if ($amount >= 1_000) {
-            return '$'.number_format($amount / 1_000, 1).'k';
-        }
-
-        return '$'.number_format($amount, 0);
     }
 }

@@ -1,12 +1,39 @@
 <?php
 
 use App\Modules\UserManagement\Http\Controllers\ActivityLogController;
+use App\Modules\UserManagement\Http\Controllers\PermissionSchemeController;
 use App\Modules\UserManagement\Http\Controllers\RoleController;
 use App\Modules\UserManagement\Http\Controllers\UserController;
 use App\Modules\UserManagement\Http\Middleware\EnsurePermission;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
+
+    /*
+    |----------------------------------------------------------------------
+    | Project permission schemes
+    |----------------------------------------------------------------------
+    */
+    Route::get('permission-schemes', [PermissionSchemeController::class, 'index'])
+        ->middleware(EnsurePermission::class.':permission-schemes.view')
+        ->name('permission-schemes.index');
+
+    Route::middleware(EnsurePermission::class.':permission-schemes.manage')->group(function () {
+        Route::post('permission-schemes', [PermissionSchemeController::class, 'store'])
+            ->name('permission-schemes.store');
+        Route::get('permission-schemes/{permissionScheme}/edit', [PermissionSchemeController::class, 'edit'])
+            ->name('permission-schemes.edit');
+        Route::patch('permission-schemes/{permissionScheme}', [PermissionSchemeController::class, 'update'])
+            ->name('permission-schemes.update');
+        Route::put('permission-schemes/{permissionScheme}/grants', [PermissionSchemeController::class, 'updateGrants'])
+            ->name('permission-schemes.grants.update');
+        Route::post('permission-schemes/{permissionScheme}/projects', [PermissionSchemeController::class, 'assignProjects'])
+            ->name('permission-schemes.projects.assign');
+        Route::post('permission-schemes/{permissionScheme}/default', [PermissionSchemeController::class, 'makeDefault'])
+            ->name('permission-schemes.default');
+        Route::delete('permission-schemes/{permissionScheme}', [PermissionSchemeController::class, 'destroy'])
+            ->name('permission-schemes.destroy');
+    });
     Route::get('users', [UserController::class, 'index'])
         ->middleware(EnsurePermission::class.':users.view')
         ->name('users.index');

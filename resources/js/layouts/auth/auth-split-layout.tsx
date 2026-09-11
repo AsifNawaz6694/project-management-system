@@ -21,10 +21,10 @@ export default function AuthSplitLayout({ children, title, description }: AuthLa
 
             <div className="flex w-full max-w-[420px] flex-col items-center gap-8">
                 <div className="flex flex-col items-center gap-3">
-                    <div className="from-violet-600 via-indigo-600 to-blue-600 shadow-glow flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br ring-1 ring-white/30">
+                    <div className="shadow-glow flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 ring-1 ring-white/30">
                         <AppLogoIcon className="size-7 fill-current text-white" />
                     </div>
-                    <span className="font-display text-base font-bold tracking-tight">{name || 'Raqtan PMS'}</span>
+                    <span className="font-display text-base font-bold tracking-tight">{name || 'Raqtan TMS'}</span>
                 </div>
 
                 <div className="bg-card shadow-soft-lg ring-border/60 w-full rounded-2xl p-8 ring-1">
@@ -36,7 +36,7 @@ export default function AuthSplitLayout({ children, title, description }: AuthLa
                 </div>
 
                 <p className="text-muted-foreground text-center text-[11px]">
-                    &copy; {new Date().getFullYear()} {name || 'Raqtan PMS'}. All rights reserved.
+                    &copy; {new Date().getFullYear()} {name || 'Raqtan TMS'}. All rights reserved.
                 </p>
             </div>
         </div>

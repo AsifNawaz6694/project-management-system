@@ -13,18 +13,27 @@ class Notification extends Model
 
     public const GROUP_PROJECTS = 'projects';
 
-    public const GROUP_EXPENSES = 'expenses';
-
     public const GROUP_MENTIONS = 'mentions';
 
     public const GROUP_DEADLINES = 'deadlines';
 
     public const GROUP_SYSTEM = 'system';
 
+    /** Every group, for filter controls. */
+    public const GROUPS = [
+        self::GROUP_TASKS,
+        self::GROUP_PROJECTS,
+        self::GROUP_MENTIONS,
+        self::GROUP_DEADLINES,
+        self::GROUP_SYSTEM,
+    ];
+
     protected $fillable = [
         'user_id',
         'actor_id',
         'type',
+        'entity_key',
+        'event_count',
         'group',
         'title',
         'body',
@@ -33,6 +42,7 @@ class Notification extends Model
         'link',
         'data',
         'read_at',
+        'emailed_at',
     ];
 
     protected function casts(): array
@@ -40,6 +50,8 @@ class Notification extends Model
         return [
             'data' => 'array',
             'read_at' => 'datetime',
+            'emailed_at' => 'datetime',
+            'event_count' => 'integer',
         ];
     }
 

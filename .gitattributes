@@ -1,2 +1,15 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Dev-only paths. `git archive` (and any deploy built from it) leaves these out,
+# so the test suite and tooling config stay in the repo for CI without ever
+# reaching a server. Tests are still run by .github/workflows/tests.yml.
+/tests           export-ignore
+/.github         export-ignore
+/.claude         export-ignore
+phpunit.xml      export-ignore
+CLAUDE.md        export-ignore
+.editorconfig    export-ignore
+.prettierrc      export-ignore
+.prettierignore  export-ignore
+eslint.config.js export-ignore

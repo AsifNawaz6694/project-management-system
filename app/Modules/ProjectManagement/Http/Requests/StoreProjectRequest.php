@@ -23,8 +23,6 @@ class StoreProjectRequest extends FormRequest
             'color' => ['nullable', Rule::in(Project::COLORS)],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'budget' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
-            'currency' => ['nullable', Rule::in(Project::CURRENCIES)],
             'progress' => ['nullable', 'integer', 'between:0,100'],
             'owner_id' => ['nullable', 'integer', 'exists:users,id'],
             'member_ids' => ['array'],

@@ -19,13 +19,14 @@ class UserService
                 'password' => Hash::make($data['password']),
                 'phone' => $data['phone'] ?? null,
                 'job_title' => $data['job_title'] ?? null,
-                'department' => $data['department'] ?? null,
+                'department_id' => $data['department_id'] ?? null,
                 'status' => $data['status'] ?? 'active',
                 'two_factor_enabled' => $data['two_factor_enabled'] ?? true,
                 'email_verified_at' => now(),
             ]);
 
             $this->syncRoles($user, $data['roles'] ?? []);
+            $this->syncDirectPermissions($user, $data['permissions'] ?? null);
 
             Activity::log('user.created', [
                 'subject_user_id' => $user->id,
@@ -45,7 +46,7 @@ class UserService
                 'email' => $data['email'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'job_title' => $data['job_title'] ?? null,
-                'department' => $data['department'] ?? null,
+                'department_id' => $data['department_id'] ?? null,
                 'status' => $data['status'] ?? null,
             ], fn ($v) => $v !== null));
 
@@ -61,6 +62,10 @@ class UserService
 
             if (array_key_exists('roles', $data)) {
                 $this->syncRoles($user, $data['roles']);
+            }
+
+            if (array_key_exists('permissions', $data)) {
+                $this->syncDirectPermissions($user, $data['permissions']);
             }
 
             Activity::log('user.updated', [
@@ -92,5 +97,20 @@ class UserService
     {
         $ids = Role::whereIn('slug', $roleSlugs)->pluck('id')->all();
         $user->roles()->sync($ids);
+    }
+
+    /**
+     * Per-user permission grants — the responsibilities that sit on top of the
+     * Employee role. Null means "not submitted", which leaves them untouched.
+     *
+     * @param  array<int, string>|null  $slugs
+     */
+    private function syncDirectPermissions(User $user, ?array $slugs): void
+    {
+        if ($slugs === null) {
+            return;
+        }
+
+        $user->syncDirectPermissionsBySlug($slugs);
     }
 }

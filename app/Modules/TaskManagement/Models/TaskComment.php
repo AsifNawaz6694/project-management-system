@@ -14,13 +14,17 @@ class TaskComment extends Model
         'user_id',
         'parent_id',
         'body',
+        'is_internal',
         'mentions',
+        'edited_at',
     ];
 
     protected function casts(): array
     {
         return [
+            'is_internal' => 'boolean',
             'mentions' => 'array',
+            'edited_at' => 'datetime',
         ];
     }
 
@@ -42,5 +46,10 @@ class TaskComment extends Model
     public function replies(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id')->oldest();
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(CommentRevision::class)->orderByDesc('created_at');
     }
 }

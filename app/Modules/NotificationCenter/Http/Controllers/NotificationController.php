@@ -9,6 +9,7 @@ use App\Modules\UserManagement\Models\Activity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,26 +21,35 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
+        $filters = [
+            'group' => $request->query('group'),
+            'unread' => $request->boolean('unread'),
+        ];
+
         $items = Notification::query()
             ->where('user_id', $user->id)
+            ->when($filters['group'], fn ($q, $g) => $q->whereIn('group', (array) $g))
+            ->when($filters['unread'], fn ($q) => $q->whereNull('read_at'))
             ->with('actor:id,name,avatar')
             ->latest()
             ->paginate(40)
             ->withQueryString();
 
         $stats = [
-            'total' => $items->total(),
-            'unread' => Notification::where('user_id', $user->id)->whereNull('read_at')->count(),
+            'total' => Notification::where('user_id', $user->id)->count(),
+            'unread' => $this->notifications->unreadCount($user),
             'by_group' => Notification::query()
                 ->where('user_id', $user->id)
-                ->selectRaw('group, COUNT(*) as total, SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread')
                 ->groupBy('group')
+                ->select('group', DB::raw('COUNT(*) as total'), DB::raw('SUM(CASE WHEN read_at IS NULL THEN 1 ELSE 0 END) as unread'))
                 ->get(),
         ];
 
         return Inertia::render('notifications/index', [
             'notifications' => $items,
             'stats' => $stats,
+            'filters' => $filters,
+            'groups' => Notification::GROUPS,
         ]);
     }
 
@@ -56,7 +66,8 @@ class NotificationController extends Controller
 
         return response()->json([
             'items' => $items,
-            'unread' => Notification::where('user_id', $user->id)->whereNull('read_at')->count(),
+            'unread' => $this->notifications->unreadCount($user),
+            'by_group' => $this->notifications->unreadByGroup($user),
         ]);
     }
 

@@ -16,25 +16,14 @@ interface DonutChartProps {
     className?: string;
 }
 
-const PALETTE: Record<string, string> = {
-    violet: 'stop-color:#7c3aed',
-    blue: 'stop-color:#3b82f6',
-    emerald: 'stop-color:#10b981',
-    amber: 'stop-color:#f59e0b',
-    rose: 'stop-color:#f43f5e',
-    pink: 'stop-color:#ec4899',
-    sky: 'stop-color:#0ea5e9',
-    slate: 'stop-color:#64748b',
-};
-
 const toneToColor: Record<string, string> = {
-    violet: '#7c3aed',
-    blue: '#3b82f6',
-    emerald: '#10b981',
-    amber: '#f59e0b',
-    rose: '#f43f5e',
-    pink: '#ec4899',
-    sky: '#0ea5e9',
+    violet: '#4a3aa7',
+    blue: '#2a78d6',
+    emerald: '#1baf7a',
+    amber: '#eda100',
+    rose: '#e34948',
+    pink: '#e87ba4',
+    sky: '#5598e7',
     slate: '#64748b',
 };
 
@@ -59,14 +48,7 @@ export function DonutChart({ slices, size = 180, thickness = 22, centerLabel, ce
         <div className={cn('flex items-center gap-6', className)}>
             <div className="relative shrink-0" style={{ width: size, height: size }}>
                 <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90 transform">
-                    <circle
-                        cx={size / 2}
-                        cy={size / 2}
-                        r={radius}
-                        fill="none"
-                        strokeWidth={thickness}
-                        className="stroke-muted"
-                    />
+                    <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={thickness} className="stroke-muted" />
                     {segments.map((s, i) => (
                         <circle
                             key={s.key}
@@ -74,7 +56,7 @@ export function DonutChart({ slices, size = 180, thickness = 22, centerLabel, ce
                             cy={size / 2}
                             r={radius}
                             fill="none"
-                            stroke={toneToColor[s.tone] ?? '#7c3aed'}
+                            stroke={toneToColor[s.tone] ?? '#2a78d6'}
                             strokeWidth={thickness}
                             strokeDasharray={`${s.length} ${circumference}`}
                             strokeDashoffset={s.offset + s.length}
@@ -93,19 +75,20 @@ export function DonutChart({ slices, size = 180, thickness = 22, centerLabel, ce
                         </circle>
                     ))}
                 </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center animate-pop-in" style={{ animationDelay: '600ms' }}>
+                <div
+                    className="animate-pop-in absolute inset-0 flex flex-col items-center justify-center text-center"
+                    style={{ animationDelay: '600ms' }}
+                >
                     {centerValue && <span className="font-display text-2xl font-bold tabular-nums">{centerValue}</span>}
-                    {centerLabel && <span className="text-muted-foreground mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em]">{centerLabel}</span>}
+                    {centerLabel && (
+                        <span className="text-muted-foreground mt-0.5 text-[10px] font-bold tracking-[0.14em] uppercase">{centerLabel}</span>
+                    )}
                 </div>
             </div>
             <ul className="flex-1 space-y-1.5 text-xs">
                 {slices.map((s, i) => (
-                    <li
-                        key={s.key}
-                        className="animate-fade-right flex items-center gap-2"
-                        style={{ animationDelay: `${700 + i * 70}ms` }}
-                    >
-                        <span className="size-2.5 rounded-full" style={{ backgroundColor: toneToColor[s.tone] ?? '#7c3aed' }} />
+                    <li key={s.key} className="animate-fade-right flex items-center gap-2" style={{ animationDelay: `${700 + i * 70}ms` }}>
+                        <span className="size-2.5 rounded-full" style={{ backgroundColor: toneToColor[s.tone] ?? '#2a78d6' }} />
                         <span className="text-foreground/80 flex-1 truncate">{s.label}</span>
                         <span className="font-semibold tabular-nums">{s.value}</span>
                     </li>

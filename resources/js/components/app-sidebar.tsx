@@ -5,13 +5,19 @@ import { Link } from '@inertiajs/react';
 import AppLogo from './app-logo';
 
 export function AppSidebar() {
+    // Padding, not margin. The layout only reserves `--sidebar-width` for the
+    // sidebar, so a margin pushed the fixed panel that far past its column and
+    // slid it under the header — the card has to breathe *inside* the column,
+    // and the same margin overflowed `h-svh` past the bottom of the viewport.
+    // Collapsed to icons it keeps the stock p-2 so the 3rem rail still fits an
+    // icon button.
     return (
         <Sidebar
             collapsible="icon"
             variant="inset"
-            className="bg-sidebar shadow-soft-md group-data-[variant=inset]:m-3 group-data-[variant=inset]:rounded-2xl group-data-[variant=inset]:border group-data-[variant=inset]:border-sidebar-border/60"
+            className="[&_[data-sidebar=sidebar]]:border-sidebar-border/60 [&_[data-sidebar=sidebar]]:shadow-soft-md group-data-[state=expanded]:p-3 [&_[data-sidebar=sidebar]]:rounded-2xl [&_[data-sidebar=sidebar]]:border"
         >
-            <SidebarHeader className="px-3 pb-3 pt-4">
+            <SidebarHeader className="px-3 pt-4 pb-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild className="h-auto rounded-xl py-2 hover:bg-transparent">
@@ -27,7 +33,7 @@ export function AppSidebar() {
                 <NavMain />
             </SidebarContent>
 
-            <SidebarFooter className="border-t border-sidebar-border/60 p-2">
+            <SidebarFooter className="border-sidebar-border/60 border-t p-2">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

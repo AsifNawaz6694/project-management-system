@@ -4,8 +4,12 @@ namespace App\Modules\ProjectManagement\Models;
 
 use App\Models\User;
 use App\Modules\Communication\Models\ProjectComment;
-use App\Modules\ExpenseManagement\Models\Expense;
+use App\Modules\TaskManagement\Models\Task;
+use App\Modules\UserManagement\Models\PermissionScheme;
+use App\Modules\Workflow\Models\Workflow;
+use Database\Factories\ProjectFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -15,7 +19,13 @@ use Illuminate\Support\Str;
 
 class Project extends Model
 {
-    use SoftDeletes;
+    /** @use HasFactory<ProjectFactory> */
+    use HasFactory, SoftDeletes;
+
+    protected static function newFactory(): ProjectFactory
+    {
+        return ProjectFactory::new();
+    }
 
     public const STATUSES = ['planning', 'active', 'on_hold', 'completed', 'cancelled'];
 
@@ -23,21 +33,18 @@ class Project extends Model
 
     public const COLORS = ['violet', 'blue', 'emerald', 'amber', 'rose', 'pink', 'sky', 'slate'];
 
-    public const CURRENCIES = ['SAR', 'PKR', 'USD'];
-
-    public const DEFAULT_CURRENCY = 'SAR';
-
     protected $fillable = [
         'title',
         'slug',
+        'key',
+        'workflow_id',
+        'permission_scheme_id',
         'description',
         'status',
         'priority',
         'color',
         'start_date',
         'end_date',
-        'budget',
-        'currency',
         'progress',
         'owner_id',
     ];
@@ -47,8 +54,8 @@ class Project extends Model
         return [
             'start_date' => 'date',
             'end_date' => 'date',
-            'budget' => 'decimal:2',
             'progress' => 'integer',
+            'task_sequence' => 'integer',
         ];
     }
 
@@ -57,6 +64,14 @@ class Project extends Model
         static::creating(function (Project $project) {
             if (! $project->slug) {
                 $project->slug = static::uniqueSlug($project->title);
+            }
+
+            if (! $project->key) {
+                $project->key = static::uniqueKey($project->title);
+            }
+
+            if (! $project->workflow_id) {
+                $project->workflow_id = Workflow::query()->where('is_default', true)->value('id');
             }
         });
 
@@ -88,6 +103,14 @@ class Project extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    /**
+     * Falls back to the default scheme when null — see ProjectPermissionResolver.
+     */
+    public function permissionScheme(): BelongsTo
+    {
+        return $this->belongsTo(PermissionScheme::class, 'permission_scheme_id');
+    }
+
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'project_user')
@@ -110,21 +133,86 @@ class Project extends Model
         return $this->hasMany(ProjectAttachment::class)->latest();
     }
 
-    public function expenses(): HasMany
+    public function tasks(): HasMany
     {
-        return $this->hasMany(Expense::class);
+        return $this->hasMany(Task::class);
+    }
+
+    public function workflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class);
+    }
+
+    /**
+     * Allocate the next per-project task number atomically.
+     *
+     * Uses an in-place increment plus a re-read rather than MAX(number)+1 so two
+     * concurrent creates cannot be handed the same key.
+     */
+    public function nextTaskNumber(): int
+    {
+        static::query()->whereKey($this->id)->increment('task_sequence');
+
+        return (int) static::query()->whereKey($this->id)->value('task_sequence');
     }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
-        if ($user->isAdmin() || $user->hasPermission('projects.create')) {
+        if ($user->isAdmin() || $user->hasPermission('projects.view-all')) {
             return $query;
         }
 
-        return $query->where(function ($q) use ($user) {
-            $q->where('owner_id', $user->id)
-                ->orWhereHas('members', fn ($m) => $m->where('users.id', $user->id));
+        // A team lead also sees the projects their teams are working in —
+        // either through a member sitting on the project, or through a task
+        // routed to one of their teams.
+        $ledTeamIds = $user->ledTeamIds();
+        $ledMemberIds = $user->ledTeamMemberIds();
+
+        return $query->where(function ($q) use ($user, $ledTeamIds, $ledMemberIds) {
+            $q->where('projects.owner_id', $user->id)
+                ->orWhereExists(function ($m) use ($user) {
+                    $m->selectRaw('1')
+                        ->from('project_user')
+                        ->whereColumn('project_user.project_id', 'projects.id')
+                        ->where('project_user.user_id', $user->id);
+                })
+                ->when($ledMemberIds !== [], fn ($q) => $q->orWhereExists(function ($m) use ($ledMemberIds) {
+                    $m->selectRaw('1')
+                        ->from('project_user')
+                        ->whereColumn('project_user.project_id', 'projects.id')
+                        ->whereIn('project_user.user_id', $ledMemberIds);
+                }))
+                ->when($ledTeamIds !== [], fn ($q) => $q->orWhereExists(function ($t) use ($ledTeamIds) {
+                    $t->selectRaw('1')
+                        ->from('tasks')
+                        ->whereColumn('tasks.project_id', 'projects.id')
+                        ->whereNull('tasks.deleted_at')
+                        ->whereIn('tasks.team_id', $ledTeamIds);
+                }));
         });
+    }
+
+    /**
+     * Short uppercase code used to build task keys (WEB-142).
+     */
+    public static function uniqueKey(string $title, ?int $ignoreId = null): string
+    {
+        $words = preg_split('/[^A-Za-z0-9]+/', $title, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $base = count($words) >= 2
+            ? strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 2))
+            : strtoupper(substr(($words[0] ?? 'PRJ'), 0, 3));
+
+        $base = preg_replace('/[^A-Z0-9]/', '', $base) ?: 'PRJ';
+        $base = str_pad(substr($base, 0, 4), 2, 'X');
+
+        $key = $base;
+        $i = 2;
+        while (static::query()->where('key', $key)->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->exists()) {
+            $key = $base.$i++;
+        }
+
+        return $key;
     }
 
     public function getRouteKeyName(): string

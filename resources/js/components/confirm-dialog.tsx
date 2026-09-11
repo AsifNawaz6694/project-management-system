@@ -21,16 +21,16 @@ interface ConfirmDialogProps {
 
 const TONE_STYLES: Record<Tone, { iconWrap: string; confirmClass: string }> = {
     destructive: {
-        iconWrap: 'from-rose-500 to-pink-600',
-        confirmClass: 'from-rose-500 to-pink-600 bg-gradient-to-br text-white hover:from-rose-600 hover:to-pink-700',
+        iconWrap: 'from-red-500 to-red-600',
+        confirmClass: 'from-red-500 to-red-600 bg-gradient-to-br text-white hover:from-rose-600 hover:to-pink-700',
     },
     warning: {
         iconWrap: 'from-amber-500 to-orange-600',
         confirmClass: 'from-amber-500 to-orange-600 bg-gradient-to-br text-white',
     },
     info: {
-        iconWrap: 'from-violet-500 to-indigo-600',
-        confirmClass: 'from-violet-600 to-indigo-600 bg-gradient-to-br text-white',
+        iconWrap: 'from-blue-500 to-blue-700',
+        confirmClass: 'from-blue-600 to-blue-700 bg-gradient-to-br text-white',
     },
 };
 
@@ -50,16 +50,19 @@ export function ConfirmDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md rounded-2xl">
+            <DialogContent className="rounded-2xl sm:max-w-md">
                 <div className="flex items-start gap-4">
-                    <div className={cn('flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-soft-md ring-1 ring-white/30', t.iconWrap)}>
+                    <div
+                        className={cn(
+                            'shadow-soft-md flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ring-1 ring-white/30',
+                            t.iconWrap,
+                        )}
+                    >
                         <Icon className="size-5 text-white" />
                     </div>
                     <DialogHeader className="space-y-1.5">
                         <DialogTitle className="font-display text-lg font-bold tracking-tight">{title}</DialogTitle>
-                        {description && (
-                            <DialogDescription className="text-sm leading-relaxed">{description}</DialogDescription>
-                        )}
+                        {description && <DialogDescription className="text-sm leading-relaxed">{description}</DialogDescription>}
                     </DialogHeader>
                 </div>
                 <DialogFooter className="gap-2 sm:gap-2">

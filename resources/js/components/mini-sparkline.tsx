@@ -8,14 +8,14 @@ interface MiniSparklineProps {
 }
 
 const TONE: Record<NonNullable<MiniSparklineProps['tone']>, string> = {
-    violet: '#7c3aed',
-    emerald: '#10b981',
-    amber: '#f59e0b',
-    rose: '#f43f5e',
-    blue: '#3b82f6',
+    violet: '#4a3aa7',
+    emerald: '#1baf7a',
+    amber: '#eda100',
+    rose: '#e34948',
+    blue: '#2a78d6',
     slate: '#64748b',
-    sky: '#0ea5e9',
-    pink: '#ec4899',
+    sky: '#5598e7',
+    pink: '#e87ba4',
 };
 
 export function MiniSparkline({ points, tone = 'violet', className, height = 36 }: MiniSparklineProps) {
@@ -42,7 +42,11 @@ export function MiniSparkline({ points, tone = 'violet', className, height = 36 
                     <stop offset="100%" stopColor={color} stopOpacity="0" />
                 </linearGradient>
             </defs>
-            <polygon points={area} fill={`url(#spark-${tone})`} style={{ opacity: 0, animation: 'fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards', animationDelay: '300ms' }} />
+            <polygon
+                points={area}
+                fill={`url(#spark-${tone})`}
+                style={{ opacity: 0, animation: 'fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards', animationDelay: '300ms' }}
+            />
             <polyline
                 points={line}
                 fill="none"
@@ -57,7 +61,13 @@ export function MiniSparkline({ points, tone = 'violet', className, height = 36 
                     ['--dash-len' as string]: lineLen,
                 }}
             />
-            <circle cx={lastX} cy={lastY} r={2.5} fill={color} style={{ opacity: 0, animation: 'pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards', animationDelay: '900ms' }} />
+            <circle
+                cx={lastX}
+                cy={lastY}
+                r={2.5}
+                fill={color}
+                style={{ opacity: 0, animation: 'pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards', animationDelay: '900ms' }}
+            />
             <circle cx={lastX} cy={lastY} r={5} fill={color} opacity="0.35" className="animate-pulse-ring" />
         </svg>
     );

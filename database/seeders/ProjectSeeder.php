@@ -10,18 +10,18 @@ class ProjectSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('email', 'admin@raqtan.com')->first();
-        $manager = User::where('email', 'manager@raqtan.com')->first();
-        $employee = User::where('email', 'employee@raqtan.com')->first();
-        $mona = User::where('email', 'mona@raqtan.com')->first();
+        $admin = User::where('email', 'asif@bargoventures.com')->first();
+        $manager = User::where('email', 'saad@bargoventures.com')->first();
+        $employee = User::where('email', 'yousuf@bargoventures.com')->first();
+        $mona = User::where('email', 'marcin@bargoventures.com')->first();
 
         if (! $admin || ! $manager || ! $employee) {
             return;
         }
 
         $byEmail = User::query()->whereIn('email', [
-            'yara@raqtan.com', 'omar@raqtan.com', 'layla@raqtan.com', 'faisal@raqtan.com',
-            'bilal@raqtan.com', 'aisha@raqtan.com', 'zayd@raqtan.com',
+            'sameer@bargoventures.com', 'usman@bargoventures.com', 'ashar@bargoventures.com', 'adil@bargoventures.com',
+            'muneeb@bargoventures.com', 'hania@bargoventures.com', 'raheel@bargoventures.com',
         ])->get()->keyBy('email');
 
         $u = fn (string $email) => $byEmail->get($email);
@@ -34,11 +34,10 @@ class ProjectSeeder extends Seeder
                 'priority' => 'high',
                 'color' => 'violet',
                 'progress' => 62,
-                'budget' => 85000,
                 'start_date' => now()->subDays(30)->toDateString(),
                 'end_date' => now()->addDays(45)->toDateString(),
                 'owner' => $manager,
-                'members' => [$employee, $u('yara@raqtan.com'), $u('bilal@raqtan.com'), $u('layla@raqtan.com')],
+                'members' => [$employee, $u('sameer@bargoventures.com'), $u('muneeb@bargoventures.com'), $u('ashar@bargoventures.com')],
                 'milestones' => [
                     ['title' => 'Discovery & user research', 'completed' => true, 'days' => -25],
                     ['title' => 'Information architecture', 'completed' => true, 'days' => -18],
@@ -55,11 +54,10 @@ class ProjectSeeder extends Seeder
                 'priority' => 'medium',
                 'color' => 'pink',
                 'progress' => 38,
-                'budget' => 40000,
                 'start_date' => now()->subDays(15)->toDateString(),
                 'end_date' => now()->addDays(40)->toDateString(),
                 'owner' => $mona ?? $manager,
-                'members' => array_filter([$mona, $u('yara@raqtan.com'), $u('aisha@raqtan.com'), $u('bilal@raqtan.com')]),
+                'members' => array_filter([$mona, $u('sameer@bargoventures.com'), $u('hania@bargoventures.com'), $u('muneeb@bargoventures.com')]),
                 'milestones' => [
                     ['title' => 'Content audit & messaging', 'completed' => true, 'days' => -12],
                     ['title' => 'Visual design', 'completed' => true, 'days' => -4],
@@ -75,11 +73,10 @@ class ProjectSeeder extends Seeder
                 'priority' => 'high',
                 'color' => 'blue',
                 'progress' => 8,
-                'budget' => 60000,
                 'start_date' => now()->addDays(7)->toDateString(),
                 'end_date' => now()->addDays(90)->toDateString(),
                 'owner' => $manager,
-                'members' => array_filter([$u('omar@raqtan.com'), $u('faisal@raqtan.com'), $u('zayd@raqtan.com')]),
+                'members' => array_filter([$u('usman@bargoventures.com'), $u('adil@bargoventures.com'), $u('raheel@bargoventures.com')]),
                 'milestones' => [
                     ['title' => 'Stakeholder requirements', 'completed' => true, 'days' => -2],
                     ['title' => 'Data model & warehouse', 'completed' => false, 'days' => 25],
@@ -95,11 +92,10 @@ class ProjectSeeder extends Seeder
                 'priority' => 'medium',
                 'color' => 'emerald',
                 'progress' => 74,
-                'budget' => 18000,
                 'start_date' => now()->subDays(50)->toDateString(),
                 'end_date' => now()->addDays(20)->toDateString(),
                 'owner' => $manager,
-                'members' => array_filter([$u('aisha@raqtan.com'), $u('bilal@raqtan.com'), $employee]),
+                'members' => array_filter([$u('hania@bargoventures.com'), $u('muneeb@bargoventures.com'), $employee]),
                 'milestones' => [
                     ['title' => 'Article taxonomy', 'completed' => true, 'days' => -45],
                     ['title' => 'CMS & search infra', 'completed' => true, 'days' => -25],
@@ -115,11 +111,10 @@ class ProjectSeeder extends Seeder
                 'priority' => 'critical',
                 'color' => 'amber',
                 'progress' => 22,
-                'budget' => 120000,
                 'start_date' => now()->subDays(60)->toDateString(),
                 'end_date' => now()->addDays(120)->toDateString(),
                 'owner' => $admin,
-                'members' => array_filter([$manager, $u('zayd@raqtan.com'), $u('omar@raqtan.com')]),
+                'members' => array_filter([$manager, $u('raheel@bargoventures.com'), $u('usman@bargoventures.com')]),
                 'milestones' => [
                     ['title' => 'Gap analysis', 'completed' => true, 'days' => -50],
                     ['title' => 'Access management policies', 'completed' => false, 'days' => 25],
@@ -135,11 +130,10 @@ class ProjectSeeder extends Seeder
                 'priority' => 'medium',
                 'color' => 'sky',
                 'progress' => 100,
-                'budget' => 22000,
                 'start_date' => now()->subDays(110)->toDateString(),
                 'end_date' => now()->subDays(20)->toDateString(),
                 'owner' => $manager,
-                'members' => array_filter([$u('yara@raqtan.com'), $u('bilal@raqtan.com'), $employee]),
+                'members' => array_filter([$u('sameer@bargoventures.com'), $u('muneeb@bargoventures.com'), $employee]),
                 'milestones' => [
                     ['title' => 'Onboarding research', 'completed' => true, 'days' => -100],
                     ['title' => 'Design + prototyping', 'completed' => true, 'days' => -80],
@@ -155,11 +149,10 @@ class ProjectSeeder extends Seeder
                 'priority' => 'low',
                 'color' => 'slate',
                 'progress' => 0,
-                'budget' => 9000,
                 'start_date' => now()->addDays(20)->toDateString(),
                 'end_date' => now()->addDays(34)->toDateString(),
                 'owner' => $manager,
-                'members' => array_filter([$u('omar@raqtan.com'), $u('zayd@raqtan.com')]),
+                'members' => array_filter([$u('usman@bargoventures.com'), $u('raheel@bargoventures.com')]),
                 'milestones' => [
                     ['title' => 'Baseline measurement', 'completed' => false, 'days' => 22],
                     ['title' => 'Top-10 query optimization', 'completed' => false, 'days' => 28],
@@ -178,7 +171,6 @@ class ProjectSeeder extends Seeder
                     'priority' => $cfg['priority'],
                     'color' => $cfg['color'],
                     'progress' => $cfg['progress'],
-                    'budget' => $cfg['budget'],
                     'start_date' => $cfg['start_date'],
                     'end_date' => $cfg['end_date'],
                     'owner_id' => $cfg['owner']?->id,

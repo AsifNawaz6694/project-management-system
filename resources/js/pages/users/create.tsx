@@ -1,5 +1,5 @@
 import { PageHeader } from '@/components/page-header';
-import { UserForm, type UserFormRole } from '@/components/user-form';
+import { UserForm, type UserFormDepartment, type UserFormRole } from '@/components/user-form';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
@@ -10,7 +10,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Invite', href: '/users/create' },
 ];
 
-export default function UsersCreate({ roles }: { roles: UserFormRole[] }) {
+export default function UsersCreate({ roles, departments }: { roles: UserFormRole[]; departments: UserFormDepartment[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Invite user" />
@@ -26,13 +26,14 @@ export default function UsersCreate({ roles }: { roles: UserFormRole[] }) {
                         email: '',
                         phone: '',
                         job_title: '',
-                        department: '',
+                        department_id: '',
                         status: 'active',
                         two_factor_enabled: true,
                         roles: ['employee'],
                         password: '',
                     }}
                     roles={roles}
+                    departments={departments}
                     submitUrl={route('users.store')}
                     submitMethod="post"
                     submitLabel="Create user"

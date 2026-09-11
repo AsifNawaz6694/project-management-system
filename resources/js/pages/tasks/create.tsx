@@ -1,7 +1,7 @@
 import { PageHeader } from '@/components/page-header';
-import { TaskForm, type AssigneeOption, type ProjectOption } from '@/components/task-form';
+import { TaskForm, type AssigneeOption, type ProjectOption, type SimpleOption } from '@/components/task-form';
 import AppLayout from '@/layouts/app-layout';
-import { type TaskPriority, type TaskStatus } from '@/lib/tasks';
+import { type TaskPriority, type WorkflowStatus } from '@/lib/tasks';
 import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 
@@ -14,14 +14,19 @@ const breadcrumbs: BreadcrumbItem[] = [
 interface TasksCreateProps {
     projects: ProjectOption[];
     assignees: AssigneeOption[];
-    statuses: string[];
+    teams: SimpleOption[];
+    labels: SimpleOption[];
+    types: SimpleOption[];
+    statuses: WorkflowStatus[];
     priorities: string[];
     preselect_project_id?: number | null;
 }
 
-export default function TasksCreate({ projects, assignees, statuses, priorities, preselect_project_id }: TasksCreateProps) {
+export default function TasksCreate({ projects, assignees, teams, labels, types, statuses, priorities, preselect_project_id }: TasksCreateProps) {
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-    const initialStatus = (params?.get('status') as TaskStatus) || 'todo';
+
+    // Fall back to the workflow's initial status rather than a hardcoded key.
+    const initialStatus = params?.get('status') ?? statuses.find((s) => s.is_initial)?.key ?? statuses[0]?.key ?? 'todo';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -30,7 +35,7 @@ export default function TasksCreate({ projects, assignees, statuses, priorities,
                 <PageHeader
                     eyebrow="Task management"
                     title="Create a new task"
-                    description="Pick the project, set priority and assignee, and break it into subtasks if it helps."
+                    description="Pick the project, set type, priority and owner, and break it into subtasks if it helps."
                 />
                 <TaskForm
                     enableAttachments
@@ -41,12 +46,19 @@ export default function TasksCreate({ projects, assignees, statuses, priorities,
                         status: initialStatus,
                         priority: 'medium' as TaskPriority,
                         due_date: '',
+                        start_date: '',
                         estimate_hm: '',
                         assignee_id: null,
+                        team_id: null,
+                        task_type_id: types[0]?.id ?? null,
+                        labels: [],
                         subtasks: [],
                     }}
                     projects={projects}
                     assignees={assignees}
+                    teams={teams}
+                    labelOptions={labels}
+                    types={types}
                     statuses={statuses}
                     priorities={priorities}
                     submitUrl={route('tasks.store')}

@@ -38,12 +38,11 @@ class TeamController extends Controller
 
     public function show(Request $request, Team $team): Response
     {
-        $team->load(['lead:id,name,avatar,job_title', 'members:id,name,avatar,job_title,department,email']);
+        $team->load(['lead:id,name,avatar,job_title', 'members:id,name,avatar,job_title,department_id,email', 'members.department:id,name']);
 
         $activities = Activity::query()
-            ->where('module', 'teams')
-            ->whereJsonContains('properties->team_id', $team->id)
-            ->latest()
+            ->forSubject(Activity::SUBJECT_TEAM, $team->id)
+            ->chronological()
             ->limit(40)
             ->get()
             ->load('user:id,name,avatar');
@@ -71,10 +70,10 @@ class TeamController extends Controller
         }
         $team->members()->sync($sync);
 
-        Activity::log('team.created', [
+        Activity::logFor('team.created', Activity::SUBJECT_TEAM, $team->id, [
             'module' => 'teams',
             'description' => "Created team {$team->name} with ".count($memberIds).' member(s)',
-            'properties' => ['team_id' => $team->id, 'team' => $team->slug, 'members' => $memberIds],
+            'properties' => ['team' => $team->slug, 'members' => $memberIds],
         ]);
 
         return redirect()->route('teams.show', $team)->with('status', "Team {$team->name} created.");
@@ -82,9 +81,12 @@ class TeamController extends Controller
 
     public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
     {
-        $original = ['name' => $team->name, 'lead_id' => $team->lead_id];
+        $before = $team->only(['name', 'description', 'color', 'lead_id']);
+        $membersBefore = $team->members()->pluck('users.id')->all();
 
         $team->fill($request->only(['name', 'description', 'color', 'lead_id']))->save();
+
+        $membersAfter = $membersBefore;
 
         if ($request->has('member_ids')) {
             $memberIds = collect($request->input('member_ids', []))
@@ -95,17 +97,30 @@ class TeamController extends Controller
                 $sync[(int) $id] = ['role' => $id == $team->lead_id ? 'lead' : 'member'];
             }
             $team->members()->sync($sync);
+            $membersAfter = array_map('intval', $memberIds);
         }
 
+        // Structured before/after, the same shape tasks and projects record,
+        // rather than prose that cannot be queried.
         $changes = [];
-        if ($original['name'] !== $team->name) $changes[] = "renamed to {$team->name}";
-        if ($original['lead_id'] !== $team->lead_id) $changes[] = "lead changed";
-        $summary = empty($changes) ? 'updated' : implode(', ', $changes);
+        foreach ($before as $field => $was) {
+            if ((string) $was !== (string) $team->getAttribute($field)) {
+                $changes[$field] = [$was, $team->getAttribute($field)];
+            }
+        }
 
-        Activity::log('team.updated', [
+        $added = array_values(array_diff($membersAfter, $membersBefore));
+        $removed = array_values(array_diff($membersBefore, $membersAfter));
+
+        if ($added !== [] || $removed !== []) {
+            $changes['members'] = array_filter(['added' => $added, 'removed' => $removed]);
+        }
+
+        // A form saved without edits used to leave "Team X: updated" behind it.
+        Activity::logChanges('team.updated', Activity::SUBJECT_TEAM, $team->id, $changes, [
             'module' => 'teams',
-            'description' => "Team {$team->name}: {$summary}",
-            'properties' => ['team_id' => $team->id, 'team' => $team->slug, 'changes' => $changes],
+            'description' => "Updated team {$team->name}: ".implode(', ', array_keys($changes)),
+            'properties' => ['team' => $team->slug],
         ]);
 
         return back()->with('status', 'Team updated.');
@@ -118,11 +133,12 @@ class TeamController extends Controller
         }
 
         $name = $team->name;
+        $id = $team->id;
         $count = $team->members()->count();
         $team->members()->detach();
         $team->delete();
 
-        Activity::log('team.deleted', [
+        Activity::logFor('team.deleted', Activity::SUBJECT_TEAM, $id, [
             'module' => 'teams',
             'description' => "Deleted team \"{$name}\" (had {$count} member(s))",
             'properties' => ['team' => $team->slug, 'members_affected' => $count],
@@ -136,9 +152,11 @@ class TeamController extends Controller
         return User::query()
             ->where('status', 'active')
             ->orderBy('name')
-            ->get(['id', 'name', 'avatar', 'job_title', 'email', 'department'])
+            ->with('department:id,name')
+            ->get(['id', 'name', 'avatar', 'job_title', 'email', 'department_id'])
             ->map(fn (User $u) => [
-                ...$u->only(['id', 'name', 'avatar', 'job_title', 'email', 'department']),
+                ...$u->only(['id', 'name', 'avatar', 'job_title', 'email']),
+                'department' => $u->departmentName(),
                 'initials' => $u->initials,
             ]);
     }

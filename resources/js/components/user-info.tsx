@@ -15,13 +15,13 @@ export function UserInfo({ user, showEmail = false, className }: { user: UserInf
     return (
         <div className={cn('flex min-w-0 items-center gap-2.5', className)}>
             <div className="relative shrink-0">
-                <Avatar className="size-9 overflow-hidden rounded-xl ring-2 ring-white dark:ring-card shadow-soft-sm">
+                <Avatar className="dark:ring-card shadow-soft-sm size-9 overflow-hidden rounded-xl ring-2 ring-white">
                     <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-                    <AvatarFallback className="from-violet-600 via-indigo-600 to-blue-600 bg-gradient-to-br text-xs font-bold text-white">
+                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-xs font-bold text-white">
                         {user.initials || getInitials(user.name)}
                     </AvatarFallback>
                 </Avatar>
-                <span className="bg-emerald-500 ring-2 ring-card absolute -bottom-0.5 -right-0.5 block size-2.5 rounded-full" />
+                <span className="ring-card absolute -right-0.5 -bottom-0.5 block size-2.5 rounded-full bg-emerald-500 ring-2" />
             </div>
             <div className="grid min-w-0 flex-1 text-left leading-tight">
                 <span className="truncate text-[13px] font-semibold">{user.name}</span>

@@ -1,6 +1,6 @@
 import { useInitials } from '@/hooks/use-initials';
-import { cn } from '@/lib/utils';
 import { COLOR_GRADIENT, formatDate, PRIORITY_META, STATUS_META, type ProjectColor, type ProjectPriority, type ProjectStatus } from '@/lib/projects';
+import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { CalendarDays, CircleCheckBig, Users } from 'lucide-react';
 
@@ -34,15 +34,15 @@ export function ProjectCard({ project }: ProjectCardProps) {
     return (
         <Link
             href={route('projects.show', project.slug)}
-            className="group bg-card shadow-soft-sm hover:shadow-soft-xl ring-border/60 hover:ring-foreground/20 ring-1 relative flex flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1"
+            className="group bg-card shadow-soft-sm hover:shadow-soft-xl ring-border/60 hover:ring-foreground/20 relative flex flex-col overflow-hidden rounded-2xl ring-1 transition-all duration-300 hover:-translate-y-1"
         >
             <div className={cn('relative h-28 overflow-hidden bg-gradient-to-br', gradient)}>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.35),transparent)]" />
-                <div className="absolute -bottom-10 -right-10 size-40 rounded-full bg-white/15 blur-2xl" />
+                <div className="absolute -right-10 -bottom-10 size-40 rounded-full bg-white/15 blur-2xl" />
                 <div className="relative flex items-start justify-between p-4">
                     <span
                         className={cn(
-                            'inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white ring-1 ring-white/30 backdrop-blur',
+                            'inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-[0.14em] text-white uppercase ring-1 ring-white/30 backdrop-blur',
                         )}
                     >
                         <span className={cn('size-1.5 rounded-full', status.dot)} /> {status.label}
@@ -58,22 +58,25 @@ export function ProjectCard({ project }: ProjectCardProps) {
             </div>
 
             <div className="-mt-6 flex flex-1 flex-col gap-3 p-5 pt-0">
-                <div className="bg-card ring-card flex size-12 items-center justify-center rounded-2xl ring-4 shadow-soft-sm">
-                    <div className={cn('flex size-9 items-center justify-center rounded-xl bg-gradient-to-br text-sm font-bold text-white shadow-soft-xs', gradient)}>
+                <div className="bg-card ring-card shadow-soft-sm flex size-12 items-center justify-center rounded-2xl ring-4">
+                    <div
+                        className={cn(
+                            'shadow-soft-xs flex size-9 items-center justify-center rounded-xl bg-gradient-to-br text-sm font-bold text-white',
+                            gradient,
+                        )}
+                    >
                         {project.title.slice(0, 2).toUpperCase()}
                     </div>
                 </div>
 
                 <div className="space-y-1">
                     <h3 className="font-display line-clamp-1 text-base font-bold tracking-tight">{project.title}</h3>
-                    {project.description && (
-                        <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">{project.description}</p>
-                    )}
+                    {project.description && <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">{project.description}</p>}
                 </div>
 
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px]">
-                        <span className="text-muted-foreground font-semibold uppercase tracking-[0.12em]">Progress</span>
+                        <span className="text-muted-foreground font-semibold tracking-[0.12em] uppercase">Progress</span>
                         <span className="font-bold tabular-nums">{project.progress}%</span>
                     </div>
                     <div className="bg-muted h-2 overflow-hidden rounded-full">
@@ -109,7 +112,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                             {visible.map((m) => (
                                 <div
                                     key={m.id}
-                                    className="ring-card flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-[10px] font-bold text-white ring-2"
+                                    className="ring-card flex size-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-[10px] font-bold text-white ring-2"
                                     title={m.name}
                                 >
                                     {getInitials(m.name)}
@@ -121,7 +124,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                                 </div>
                             )}
                         </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors group-hover:text-foreground">
+                        <span className="text-muted-foreground group-hover:text-foreground text-[10px] font-semibold tracking-[0.14em] uppercase transition-colors">
                             View →
                         </span>
                     </div>

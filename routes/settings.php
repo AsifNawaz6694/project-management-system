@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Settings\NotificationPreferenceController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
+
+    Route::get('settings/notifications', [NotificationPreferenceController::class, 'edit'])
+        ->name('notifications.preferences');
+    Route::patch('settings/notifications', [NotificationPreferenceController::class, 'update'])
+        ->name('notifications.preferences.update');
 
     Route::get('settings/appearance', function () {
         return Inertia::render('settings/appearance');

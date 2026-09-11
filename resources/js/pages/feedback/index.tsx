@@ -28,7 +28,10 @@ interface IncomingRow {
     cycle: { id: number; name: string; kind: string; ends_at: string };
 }
 
-interface Props { cycles: Cycle[]; incoming: IncomingRow[] }
+interface Props {
+    cycles: Cycle[];
+    incoming: IncomingRow[];
+}
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Workspace', href: '/dashboard' },
@@ -36,8 +39,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const KIND_TONE: Record<string, string> = {
-    peer: 'from-violet-500 to-indigo-600',
-    '360': 'from-pink-500 to-fuchsia-600',
+    peer: 'from-blue-500 to-blue-700',
+    '360': 'from-slate-500 to-slate-700',
     manager: 'from-blue-500 to-cyan-600',
     self: 'from-amber-500 to-orange-600',
     team: 'from-emerald-500 to-teal-600',
@@ -54,24 +57,34 @@ export default function FeedbackIndex({ cycles, incoming }: Props) {
                     eyebrow="People"
                     title="Feedback"
                     description="Run 360 reviews, peer feedback, manager check-ins, and self-assessments."
-                    actions={<Button asChild className="gap-2"><Link href={route('feedback.cycles.create')}><Plus className="size-4" /> New cycle</Link></Button>}
+                    actions={
+                        <Button asChild className="gap-2">
+                            <Link href={route('feedback.cycles.create')}>
+                                <Plus className="size-4" /> New cycle
+                            </Link>
+                        </Button>
+                    }
                 />
 
                 {incoming.length > 0 && (
                     <SoftCard>
                         <SoftCardTitle eyebrow="Inbox" action={<span className="text-muted-foreground text-xs">{incoming.length} pending</span>}>
-                            <span className="inline-flex items-center gap-2"><Inbox className="size-4 text-violet-500" /> Awaiting your feedback</span>
+                            <span className="inline-flex items-center gap-2">
+                                <Inbox className="size-4 text-blue-500" /> Awaiting your feedback
+                            </span>
                         </SoftCardTitle>
                         <SoftCardBody>
                             <ul className="space-y-2">
                                 {incoming.map((r) => (
-                                    <li key={r.id} className="bg-muted/30 ring-border/60 ring-1 flex items-center gap-3 rounded-xl p-3">
-                                        <span className="from-pink-500 to-fuchsia-600 ring-card flex size-9 items-center justify-center rounded-full bg-gradient-to-br text-[11px] font-bold text-white ring-2">
+                                    <li key={r.id} className="bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-3 ring-1">
+                                        <span className="ring-card flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-slate-500 to-slate-700 text-[11px] font-bold text-white ring-2">
                                             {getInitials(r.subject.name)}
                                         </span>
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-semibold">Share feedback on {r.subject.name}</p>
-                                            <p className="text-muted-foreground truncate text-[11px]">"{r.cycle.name}" · {r.cycle.kind} · due {r.cycle.ends_at}</p>
+                                            <p className="text-muted-foreground truncate text-[11px]">
+                                                "{r.cycle.name}" · {r.cycle.kind} · due {r.cycle.ends_at}
+                                            </p>
                                         </div>
                                         <Button asChild size="sm">
                                             <Link href={route('feedback.requests.show', r.id)}>Respond</Link>
@@ -92,16 +105,30 @@ export default function FeedbackIndex({ cycles, incoming }: Props) {
                             <ul className="grid gap-3 md:grid-cols-2">
                                 {cycles.map((c) => (
                                     <li key={c.id}>
-                                        <Link href={route('feedback.cycles.show', c.id)} className="bg-muted/30 ring-border/60 ring-1 hover:ring-foreground/20 block rounded-xl p-4 transition-all">
+                                        <Link
+                                            href={route('feedback.cycles.show', c.id)}
+                                            className="bg-muted/30 ring-border/60 hover:ring-foreground/20 block rounded-xl p-4 ring-1 transition-all"
+                                        >
                                             <div className="flex items-start gap-3">
-                                                <span className={cn('shadow-soft-xs flex size-10 items-center justify-center rounded-xl bg-gradient-to-br text-white', KIND_TONE[c.kind] ?? 'from-violet-500 to-indigo-600')}>
+                                                <span
+                                                    className={cn(
+                                                        'shadow-soft-xs flex size-10 items-center justify-center rounded-xl bg-gradient-to-br text-white',
+                                                        KIND_TONE[c.kind] ?? 'from-blue-500 to-blue-700',
+                                                    )}
+                                                >
                                                     <MessageCircle className="size-4" />
                                                 </span>
                                                 <div className="min-w-0 flex-1">
                                                     <p className="truncate text-sm font-bold">{c.name}</p>
-                                                    <p className="text-muted-foreground text-[11px] capitalize">{c.kind} · {c.status} · {c.starts_at} → {c.ends_at}</p>
-                                                    {c.description && <p className="text-muted-foreground mt-1 text-xs line-clamp-2">{c.description}</p>}
-                                                    <p className="text-muted-foreground mt-1.5 text-[11px]">{c.questions_count} questions · {c.requests_count} requests</p>
+                                                    <p className="text-muted-foreground text-[11px] capitalize">
+                                                        {c.kind} · {c.status} · {c.starts_at} → {c.ends_at}
+                                                    </p>
+                                                    {c.description && (
+                                                        <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{c.description}</p>
+                                                    )}
+                                                    <p className="text-muted-foreground mt-1.5 text-[11px]">
+                                                        {c.questions_count} questions · {c.requests_count} requests
+                                                    </p>
                                                 </div>
                                             </div>
                                         </Link>

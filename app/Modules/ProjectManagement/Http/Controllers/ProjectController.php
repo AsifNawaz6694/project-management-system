@@ -4,11 +4,12 @@ namespace App\Modules\ProjectManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Modules\ExpenseManagement\Services\ExpenseService;
+use App\Modules\NotificationCenter\Services\NotificationService;
 use App\Modules\ProjectManagement\Http\Requests\StoreProjectRequest;
 use App\Modules\ProjectManagement\Http\Requests\UpdateProjectRequest;
 use App\Modules\ProjectManagement\Models\Project;
 use App\Modules\ProjectManagement\Services\ProjectService;
+use App\Modules\TaskManagement\Models\Task;
 use App\Modules\UserManagement\Models\Activity;
 use App\Modules\UserManagement\Models\Role;
 use Illuminate\Http\RedirectResponse;
@@ -44,8 +45,10 @@ class ProjectController extends Controller
                         ->orWhere('description', 'like', "%{$search}%");
                 });
             })
-            ->when($filters['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
-            ->when($filters['priority'] ?? null, fn ($q, $p) => $q->where('priority', $p))
+            // Filters arrive as arrays from the multi-select controls; a single
+            // value is still accepted so existing links keep working.
+            ->when($filters['status'] ?? null, fn ($q, $s) => $q->whereIn('status', (array) $s))
+            ->when($filters['priority'] ?? null, fn ($q, $p) => $q->whereIn('priority', (array) $p))
             ->orderByRaw("CASE status WHEN 'active' THEN 1 WHEN 'planning' THEN 2 WHEN 'on_hold' THEN 3 WHEN 'completed' THEN 4 WHEN 'cancelled' THEN 5 END")
             ->latest('updated_at')
             ->paginate(12)
@@ -67,7 +70,6 @@ class ProjectController extends Controller
             'statuses' => Project::STATUSES,
             'priorities' => Project::PRIORITIES,
             'colors' => Project::COLORS,
-            'currencies' => Project::CURRENCIES,
         ]);
     }
 
@@ -82,6 +84,10 @@ class ProjectController extends Controller
 
     public function show(Request $request, Project $project): Response
     {
+        // Opening the project clears its queued notifications for this user.
+        app(NotificationService::class)
+            ->markEntityRead($request->user(), 'project:'.$project->id);
+
         $user = $request->user();
         if (! Project::query()->visibleTo($user)->whereKey($project->id)->exists()) {
             abort(403);
@@ -89,16 +95,23 @@ class ProjectController extends Controller
 
         $project->load([
             'owner:id,name,avatar,job_title',
-            'members:id,name,avatar,job_title,department',
+            'members:id,name,avatar,job_title,department_id',
+            'members.department:id,name',
             'milestones',
             'attachments.uploader:id,name,avatar',
             'comments.user:id,name,avatar',
         ]);
 
+        // The project's own events plus everything that happened to its tasks.
+        // The task ids stay a subquery so a large project never builds an IN
+        // list in PHP just to read twenty rows.
         $activities = Activity::query()
-            ->where('module', 'projects')
-            ->whereJsonContains('properties->project_id', $project->id)
-            ->latest()
+            ->forProjectTimeline(
+                $project->id,
+                Task::query()->where('project_id', $project->id)->select('id'),
+            )
+            ->with('user:id,name,avatar')
+            ->chronological()
             ->limit(20)
             ->get();
 
@@ -126,8 +139,6 @@ class ProjectController extends Controller
                 ];
             });
 
-        $budget = ExpenseService::projectBudgetSummary($project);
-
         return Inertia::render('projects/show', [
             'project' => $project,
             'activities' => $activities,
@@ -136,9 +147,7 @@ class ProjectController extends Controller
                 'completed' => $project->milestones->whereNotNull('completed_at')->count(),
             ],
             'comments' => $rootComments,
-            'budget' => $budget,
             'canUpload' => $request->user()->hasPermission('projects.update') || $project->owner_id === $request->user()->id,
-            'canSubmitExpense' => $request->user()->hasPermission('expenses.create'),
         ]);
     }
 
@@ -155,7 +164,6 @@ class ProjectController extends Controller
             'statuses' => Project::STATUSES,
             'priorities' => Project::PRIORITIES,
             'colors' => Project::COLORS,
-            'currencies' => Project::CURRENCIES,
         ]);
     }
 
@@ -187,9 +195,11 @@ class ProjectController extends Controller
             ->whereHas('roles', fn ($q) => $q->whereIn('slug', [Role::ADMIN, Role::MANAGER, Role::EMPLOYEE]))
             ->where('status', 'active')
             ->orderBy('name')
-            ->get(['id', 'name', 'email', 'avatar', 'job_title', 'department'])
+            ->with('department:id,name')
+            ->get(['id', 'name', 'email', 'avatar', 'job_title', 'department_id'])
             ->map(fn (User $u) => [
-                ...$u->only(['id', 'name', 'email', 'avatar', 'job_title', 'department']),
+                ...$u->only(['id', 'name', 'email', 'avatar', 'job_title']),
+                'department' => $u->departmentName(),
                 'initials' => $u->initials,
                 'primary_role' => $u->primaryRole()?->slug,
             ]);

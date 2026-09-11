@@ -10,6 +10,12 @@ import { Link, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 
+export interface UserFormDepartment {
+    id: number;
+    slug: string;
+    name: string;
+}
+
 export interface UserFormRole {
     id: number;
     slug: string;
@@ -17,21 +23,22 @@ export interface UserFormRole {
     description?: string | null;
 }
 
-export interface UserFormInitial {
+export type UserFormInitial = {
     name: string;
     email: string;
     phone: string;
     job_title: string;
-    department: string;
+    department_id: string;
     status: 'active' | 'invited' | 'suspended';
     two_factor_enabled: boolean;
     roles: string[];
     password: string;
-}
+};
 
 interface UserFormProps {
     initial: UserFormInitial;
     roles: UserFormRole[];
+    departments: UserFormDepartment[];
     submitUrl: string;
     submitMethod: 'post' | 'patch';
     submitLabel: string;
@@ -39,7 +46,7 @@ interface UserFormProps {
     requirePassword?: boolean;
 }
 
-export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel, cancelUrl, requirePassword = false }: UserFormProps) {
+export function UserForm({ initial, roles, departments, submitUrl, submitMethod, submitLabel, cancelUrl, requirePassword = false }: UserFormProps) {
     const { data, setData, post, patch, processing, errors } = useForm<UserFormInitial>({ ...initial });
 
     const submit: FormEventHandler = (e) => {
@@ -49,10 +56,7 @@ export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel,
     };
 
     const toggleRole = (slug: string) => {
-        setData(
-            'roles',
-            data.roles.includes(slug) ? data.roles.filter((s) => s !== slug) : [...data.roles, slug],
-        );
+        setData('roles', data.roles.includes(slug) ? data.roles.filter((s) => s !== slug) : [...data.roles, slug]);
     };
 
     return (
@@ -72,8 +76,20 @@ export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel,
                     <Field label="Job title" error={errors.job_title}>
                         <Input value={data.job_title} onChange={(e) => setData('job_title', e.target.value)} />
                     </Field>
-                    <Field label="Department" error={errors.department}>
-                        <Input value={data.department} onChange={(e) => setData('department', e.target.value)} />
+                    <Field label="Department" error={errors.department_id}>
+                        <Select value={data.department_id || 'none'} onValueChange={(v) => setData('department_id', v === 'none' ? '' : v)}>
+                            <SelectTrigger className="h-11 rounded-xl">
+                                <SelectValue placeholder="Unassigned" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                <SelectItem value="none">Unassigned</SelectItem>
+                                {departments.map((d) => (
+                                    <SelectItem key={d.id} value={String(d.id)}>
+                                        {d.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </Field>
                     <Field label="Status" error={errors.status}>
                         <Select value={data.status} onValueChange={(v) => setData('status', v as UserFormInitial['status'])}>
@@ -104,8 +120,8 @@ export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel,
                                     className={cn(
                                         'group relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-200',
                                         checked
-                                            ? 'shadow-soft-md from-violet-50 via-card to-card ring-violet-300 dark:from-violet-500/10 dark:ring-violet-500/30 bg-gradient-to-br ring-2'
-                                            : 'bg-card ring-border ring-1 hover:ring-foreground/30 hover:shadow-soft-sm',
+                                            ? 'shadow-soft-md via-card to-card bg-gradient-to-br from-blue-50 ring-2 ring-blue-300 dark:from-blue-500/10 dark:ring-blue-500/30'
+                                            : 'bg-card ring-border hover:ring-foreground/30 hover:shadow-soft-sm ring-1',
                                     )}
                                 >
                                     <div className="flex items-center justify-between">
@@ -113,7 +129,9 @@ export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel,
                                         <div
                                             className={cn(
                                                 'flex size-5 items-center justify-center rounded-full border-2 transition-colors',
-                                                checked ? 'border-violet-600 bg-gradient-to-br from-violet-600 to-indigo-600' : 'border-muted-foreground/30',
+                                                checked
+                                                    ? 'border-blue-600 bg-gradient-to-br from-blue-600 to-blue-700'
+                                                    : 'border-muted-foreground/30',
                                             )}
                                         >
                                             {checked && <span className="size-2 rounded-full bg-white" />}
@@ -132,10 +150,7 @@ export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel,
             <SoftCard>
                 <SoftCardTitle eyebrow="Security">Password & 2FA</SoftCardTitle>
                 <SoftCardBody className="grid gap-4 md:grid-cols-2">
-                    <Field
-                        label={requirePassword ? 'Initial password' : 'Reset password (leave blank to keep current)'}
-                        error={errors.password}
-                    >
+                    <Field label={requirePassword ? 'Initial password' : 'Reset password (leave blank to keep current)'} error={errors.password}>
                         <Input
                             type="password"
                             autoComplete="new-password"
@@ -152,7 +167,7 @@ export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel,
                                 type="checkbox"
                                 checked={data.two_factor_enabled}
                                 onChange={(e) => setData('two_factor_enabled', e.target.checked)}
-                                className="size-4 accent-violet-600"
+                                className="size-4 accent-blue-600"
                             />
                         </label>
                     </Field>
@@ -175,7 +190,7 @@ export function UserForm({ initial, roles, submitUrl, submitMethod, submitLabel,
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
     return (
         <div className="space-y-1.5">
-            <Label className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.14em]">{label}</Label>
+            <Label className="text-muted-foreground text-[10px] font-bold tracking-[0.14em] uppercase">{label}</Label>
             {children}
             <InputError message={error} />
         </div>
