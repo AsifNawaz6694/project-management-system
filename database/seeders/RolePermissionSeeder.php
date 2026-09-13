@@ -84,8 +84,13 @@ class RolePermissionSeeder extends Seeder
 
             'workflows.view',
 
-            'teams.view',
-
+            // No `teams.view`: the Teams panel is a management surface, and the
+            // sidebar hides it because the permission is absent rather than
+            // because the nav says so. A team lead gets it back through their
+            // responsibility bundle (ResponsibilityRegistry::backendUiLead).
+            //
+            // `reports.view` without `reports.view-all` is a *personal* report:
+            // ReportController scopes every figure to the viewer's own work.
             'reports.view',
 
             'meetings.view', 'meetings.create', 'meetings.update',

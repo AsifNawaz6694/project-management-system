@@ -33,11 +33,16 @@ it('marks a comment internal when the author can edit the task', function () {
 
 it('refuses to make a note internal for someone who cannot edit the task', function () {
     $owner = TaskHelpers::admin();
+    // Being the assignee is what puts the task in their scope — project
+    // membership alone no longer reveals other people's work.
     $commenter = TaskHelpers::userWith(['tasks.view']);
     $project = TaskHelpers::project($owner);
-    $project->members()->attach([$commenter->id => ['role' => 'member']]);
 
-    $task = Task::factory()->create(['project_id' => $project->id, 'created_by_id' => $owner->id]);
+    $task = Task::factory()->create([
+        'project_id' => $project->id,
+        'created_by_id' => $owner->id,
+        'assignee_id' => $commenter->id,
+    ]);
 
     $this->actingAs($commenter)
         ->post(route('tasks.comments.store', $task), ['body' => 'Trying to hide this', 'is_internal' => true])
@@ -51,9 +56,12 @@ it('hides an internal note from someone who cannot edit the task', function () {
     $owner = TaskHelpers::admin();
     $viewer = TaskHelpers::userWith(['tasks.view']);
     $project = TaskHelpers::project($owner);
-    $project->members()->attach([$viewer->id => ['role' => 'member']]);
 
-    $task = Task::factory()->create(['project_id' => $project->id, 'created_by_id' => $owner->id]);
+    $task = Task::factory()->create([
+        'project_id' => $project->id,
+        'created_by_id' => $owner->id,
+        'assignee_id' => $viewer->id,
+    ]);
 
     TaskComment::query()->create([
         'task_id' => $task->id, 'user_id' => $owner->id,

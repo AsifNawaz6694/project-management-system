@@ -412,12 +412,19 @@ it('only shows a member the work they may see', function () {
     $project = TaskHelpers::project($owner);
     $project->members()->attach([$member->id => ['role' => 'member']]);
 
+    // Sitting on the project's member list is not a licence to read the whole
+    // backlog: without `tasks.view-all` a member sees the work that is theirs.
+    Task::factory()->create([
+        'project_id' => $project->id,
+        'created_by_id' => $owner->id,
+        'assignee_id' => $member->id,
+    ]);
     Task::factory()->count(2)->create(['project_id' => $project->id, 'created_by_id' => $owner->id]);
 
     $this->actingAs($member)
         ->get(route('sprints.backlog', $project->slug))
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->has('tasks', 2)->where('can.manage', false));
+        ->assertInertia(fn ($page) => $page->has('tasks', 1)->where('can.manage', false));
 });
 
 it('refuses backlog changes to someone who cannot edit the project', function () {

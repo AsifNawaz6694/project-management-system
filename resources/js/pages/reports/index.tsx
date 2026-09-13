@@ -28,12 +28,18 @@ const RANGES: Array<{ value: number; label: string }> = [
 
 interface ReportProps {
     range: number;
+    /**
+     * True when the viewer lacks `reports.view-all`: every figure on the page
+     * covers their own work only, and the cards that rank colleagues are gone.
+     */
+    scoped: boolean;
     overview: {
         projects_total: number;
         projects_active: number;
         projects_completed: number;
         tasks_total: number;
         tasks_completed: number;
+        tasks_open: number;
         tasks_overdue: number;
         users_active: number;
         created_projects_in_range: number;
@@ -90,8 +96,12 @@ export default function ReportsIndex(props: ReportProps) {
             <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     eyebrow="Insights"
-                    title="Reports & Analytics"
-                    description="Cross-workspace performance: project velocity, task throughput, financial health, and team output."
+                    title={props.scoped ? 'My Reports' : 'Reports & Analytics'}
+                    description={
+                        props.scoped
+                            ? 'Your own performance: the tasks assigned to you and the projects you are working in.'
+                            : 'Cross-workspace performance: project velocity, task throughput, and team output.'
+                    }
                     actions={
                         <div className="flex flex-wrap items-center gap-2">
                             {can('reports.export') && (
@@ -138,7 +148,7 @@ export default function ReportsIndex(props: ReportProps) {
 
                 <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <StatCard
-                        label="Active projects"
+                        label={props.scoped ? 'My active projects' : 'Active projects'}
                         value={props.overview.projects_active}
                         sub={`${props.overview.projects_total} total · ${props.overview.projects_completed} done`}
                         icon={FolderKanban}
@@ -151,13 +161,23 @@ export default function ReportsIndex(props: ReportProps) {
                         icon={ListChecks}
                         accent="emerald"
                     />
-                    <StatCard
-                        label="Active members"
-                        value={props.overview.users_active}
-                        sub={`${props.overview.created_projects_in_range} new projects · ${props.overview.completed_tasks_in_range} tasks done in range`}
-                        icon={Users}
-                        accent="blue"
-                    />
+                    {props.scoped ? (
+                        <StatCard
+                            label="My open tasks"
+                            value={props.overview.tasks_open}
+                            sub={`${props.overview.completed_tasks_in_range} completed in range`}
+                            icon={TrendingUp}
+                            accent="blue"
+                        />
+                    ) : (
+                        <StatCard
+                            label="Active members"
+                            value={props.overview.users_active}
+                            sub={`${props.overview.created_projects_in_range} new projects · ${props.overview.completed_tasks_in_range} tasks done in range`}
+                            icon={Users}
+                            accent="blue"
+                        />
+                    )}
                 </section>
 
                 <section className="grid gap-5 lg:grid-cols-3">
@@ -304,39 +324,44 @@ export default function ReportsIndex(props: ReportProps) {
                         </SoftCardBody>
                     </SoftCard>
 
-                    <SoftCard>
-                        <SoftCardTitle eyebrow="Capacity">Open workload by person</SoftCardTitle>
-                        <SoftCardBody>
-                            {props.workloadByUser.length === 0 ? (
-                                <p className="text-muted-foreground text-xs">No open work assigned.</p>
-                            ) : (
-                                <ul className="space-y-2">
-                                    {props.workloadByUser.map((w) => (
-                                        <li key={w.id} className="bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-2.5 ring-1">
-                                            <span className="ring-card flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-[10px] font-bold text-white ring-2">
-                                                {getInitials(w.name)}
-                                            </span>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold">{w.name}</p>
-                                                <p className="text-muted-foreground truncate text-[11px]">
-                                                    {w.job_title ?? '—'}
-                                                    {w.estimated_minutes > 0 && ` · ${formatHours(w.estimated_minutes / 60)} estimated`}
-                                                </p>
-                                            </div>
-                                            {w.overdue_tasks > 0 && (
-                                                <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 tabular-nums ring-1 ring-red-200/70 ring-inset dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30">
-                                                    {w.overdue_tasks} late
+                    {/* Capacity and ranking compare people, so they only appear on the
+                        workspace-wide report. A scoped viewer has their own numbers in
+                        the tiles above instead. */}
+                    {!props.scoped && (
+                        <SoftCard>
+                            <SoftCardTitle eyebrow="Capacity">Open workload by person</SoftCardTitle>
+                            <SoftCardBody>
+                                {props.workloadByUser.length === 0 ? (
+                                    <p className="text-muted-foreground text-xs">No open work assigned.</p>
+                                ) : (
+                                    <ul className="space-y-2">
+                                        {props.workloadByUser.map((w) => (
+                                            <li key={w.id} className="bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-2.5 ring-1">
+                                                <span className="ring-card flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 text-[10px] font-bold text-white ring-2">
+                                                    {getInitials(w.name)}
                                                 </span>
-                                            )}
-                                            <span className="bg-muted inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums">
-                                                {w.open_tasks} open
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </SoftCardBody>
-                    </SoftCard>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-semibold">{w.name}</p>
+                                                    <p className="text-muted-foreground truncate text-[11px]">
+                                                        {w.job_title ?? '—'}
+                                                        {w.estimated_minutes > 0 && ` · ${formatHours(w.estimated_minutes / 60)} estimated`}
+                                                    </p>
+                                                </div>
+                                                {w.overdue_tasks > 0 && (
+                                                    <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700 tabular-nums ring-1 ring-red-200/70 ring-inset dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30">
+                                                        {w.overdue_tasks} late
+                                                    </span>
+                                                )}
+                                                <span className="bg-muted inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums">
+                                                    {w.open_tasks} open
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </SoftCardBody>
+                        </SoftCard>
+                    )}
 
                     {props.workloadByTeam.length > 0 && (
                         <SoftCard>
@@ -361,42 +386,44 @@ export default function ReportsIndex(props: ReportProps) {
                         </SoftCard>
                     )}
 
-                    <SoftCard>
-                        <SoftCardTitle eyebrow="Performance">Top performers</SoftCardTitle>
-                        <SoftCardBody>
-                            {props.topPerformers.length === 0 ? (
-                                <p className="text-muted-foreground text-xs">No completion activity in this range.</p>
-                            ) : (
-                                <ul className="space-y-2">
-                                    {props.topPerformers.map((p, i) => (
-                                        <li key={p.id} className="bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-3 ring-1">
-                                            <div
-                                                className={cn(
-                                                    'shadow-soft-xs ring-card flex size-9 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-bold text-white ring-2',
-                                                    i === 0
-                                                        ? 'from-amber-400 to-orange-500'
-                                                        : i === 1
-                                                          ? 'from-blue-500 to-blue-700'
-                                                          : i === 2
-                                                            ? 'from-slate-500 to-slate-700'
-                                                            : 'from-emerald-500 to-teal-600',
-                                                )}
-                                            >
-                                                {p.initials || getInitials(p.name)}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold">{p.name}</p>
-                                                <p className="text-muted-foreground truncate text-[11px]">{p.job_title ?? '—'}</p>
-                                            </div>
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 tabular-nums ring-1 ring-emerald-200/70 ring-inset dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30">
-                                                <CheckCircle2 className="size-3" /> {p.completed_tasks}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </SoftCardBody>
-                    </SoftCard>
+                    {!props.scoped && (
+                        <SoftCard>
+                            <SoftCardTitle eyebrow="Performance">Top performers</SoftCardTitle>
+                            <SoftCardBody>
+                                {props.topPerformers.length === 0 ? (
+                                    <p className="text-muted-foreground text-xs">No completion activity in this range.</p>
+                                ) : (
+                                    <ul className="space-y-2">
+                                        {props.topPerformers.map((p, i) => (
+                                            <li key={p.id} className="bg-muted/30 ring-border/60 flex items-center gap-3 rounded-xl p-3 ring-1">
+                                                <div
+                                                    className={cn(
+                                                        'shadow-soft-xs ring-card flex size-9 items-center justify-center rounded-xl bg-gradient-to-br text-xs font-bold text-white ring-2',
+                                                        i === 0
+                                                            ? 'from-amber-400 to-orange-500'
+                                                            : i === 1
+                                                              ? 'from-blue-500 to-blue-700'
+                                                              : i === 2
+                                                                ? 'from-slate-500 to-slate-700'
+                                                                : 'from-emerald-500 to-teal-600',
+                                                    )}
+                                                >
+                                                    {p.initials || getInitials(p.name)}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="truncate text-sm font-semibold">{p.name}</p>
+                                                    <p className="text-muted-foreground truncate text-[11px]">{p.job_title ?? '—'}</p>
+                                                </div>
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 tabular-nums ring-1 ring-emerald-200/70 ring-inset dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30">
+                                                    <CheckCircle2 className="size-3" /> {p.completed_tasks}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </SoftCardBody>
+                        </SoftCard>
+                    )}
                 </section>
 
                 <SoftCard>
@@ -485,11 +512,16 @@ export default function ReportsIndex(props: ReportProps) {
                     <SoftCardTitle
                         eyebrow="Audit"
                         action={
-                            <Button asChild size="sm" variant="soft" className="gap-1.5">
-                                <Link href={route('activity.index')}>
-                                    <BarChart3 className="size-3.5" /> Full log
-                                </Link>
-                            </Button>
+                            // The full log is an administration surface; offering the
+                            // link to someone the route would refuse is worse than
+                            // not offering it.
+                            can('users.view') ? (
+                                <Button asChild size="sm" variant="soft" className="gap-1.5">
+                                    <Link href={route('activity.index')}>
+                                        <BarChart3 className="size-3.5" /> Full log
+                                    </Link>
+                                </Button>
+                            ) : undefined
                         }
                     >
                         Recent activity

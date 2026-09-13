@@ -198,9 +198,17 @@ class Task extends Model
     }
 
     /**
-     * Rows this user may see. Visibility follows project membership, direct
-     * assignment, team membership or authorship — never a bare permission,
-     * so that a broad grant cannot silently widen data access.
+     * Rows this user may see. Visibility follows direct assignment, authorship,
+     * team routing, team leadership or project ownership — never a bare
+     * permission, so that a broad grant cannot silently widen data access.
+     *
+     * Plain project membership is deliberately **not** on that list. Being a
+     * member of a project used to reveal every task in it, which made an
+     * employee's task list the whole board; a developer now sees the work that
+     * is actually theirs — assigned to them, raised by them, or routed to a
+     * team they are on (that last one is how unassigned team work stays
+     * pickable). Anyone who needs the whole board holds `tasks.view-all`, which
+     * the Manager role and the reporting bundles carry.
      */
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {
@@ -218,19 +226,13 @@ class Task extends Model
                 ->orWhere('tasks.created_by_id', $user->id)
                 ->orWhereIn('tasks.team_id', $teamIds ?: [0])
                 ->when($ledMemberIds !== [], fn ($q) => $q->orWhereIn('tasks.assignee_id', $ledMemberIds))
+                // Owning the project still carries accountability for the work
+                // inside it; sitting on its member list no longer does.
                 ->orWhereExists(function ($sub) use ($user) {
                     $sub->selectRaw('1')
                         ->from('projects')
                         ->whereColumn('projects.id', 'tasks.project_id')
-                        ->where(function ($p) use ($user) {
-                            $p->where('projects.owner_id', $user->id)
-                                ->orWhereExists(function ($m) use ($user) {
-                                    $m->selectRaw('1')
-                                        ->from('project_user')
-                                        ->whereColumn('project_user.project_id', 'projects.id')
-                                        ->where('project_user.user_id', $user->id);
-                                });
-                        });
+                        ->where('projects.owner_id', $user->id);
                 });
         });
     }

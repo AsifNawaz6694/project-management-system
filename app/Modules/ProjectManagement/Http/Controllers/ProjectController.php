@@ -102,13 +102,14 @@ class ProjectController extends Controller
             'comments.user:id,name,avatar',
         ]);
 
-        // The project's own events plus everything that happened to its tasks.
-        // The task ids stay a subquery so a large project never builds an IN
-        // list in PHP just to read twenty rows.
+        // The project's own events plus everything that happened to the tasks in
+        // it *this viewer can see* — the timeline must not become the way someone
+        // discovers work that is not theirs. The task ids stay a subquery so a
+        // large project never builds an IN list in PHP just to read twenty rows.
         $activities = Activity::query()
             ->forProjectTimeline(
                 $project->id,
-                Task::query()->where('project_id', $project->id)->select('id'),
+                Task::query()->visibleTo($user)->where('project_id', $project->id)->select('tasks.id'),
             )
             ->with('user:id,name,avatar')
             ->chronological()
